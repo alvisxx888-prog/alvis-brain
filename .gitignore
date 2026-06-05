@@ -1,0 +1,13 @@
+.env
+*.env
+*.pdf
+*.jpeg
+*.jpg
+*.png
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.json
+.DS_Store
+node_modules/

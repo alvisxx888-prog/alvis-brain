@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stanley IG 主控台 | 痛症方案顧問</title>
+<style>
+  :root {
+    --blue: #1B3A6B;
+    --teal: #2A9D8F;
+    --white: #ffffff;
+    --light: #f0f4ff;
+    --grey: #6c757d;
+    --green: #28a745;
+    --orange: #fd7e14;
+    --red: #dc3545;
+    --new: #1a6440;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang HK", "Noto Sans TC", sans-serif; background: #f5f7fb; color: #1a1a2e; display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: 230px; min-width: 230px; background: var(--blue); color: white;
+    position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto;
+    padding: 0 0 30px 0; z-index: 100;
+  }
+  #sidebar .brand { padding: 20px 16px; background: rgba(0,0,0,0.2); }
+  #sidebar .brand h2 { font-size: 16px; color: var(--teal); }
+  #sidebar .brand p { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+  #sidebar .nav-section { padding: 12px 16px 4px; font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+  #sidebar a { display: block; padding: 8px 16px; font-size: 13px; color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.2s; }
+  #sidebar a:hover, #sidebar a.active { background: rgba(42,157,143,0.25); color: white; border-left: 3px solid var(--teal); }
+  #sidebar a .badge { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+  #sidebar a .badge.done { background: var(--teal); }
+  #sidebar a .badge.canva { background: var(--orange); }
+  #sidebar a .badge.story { background: #6f42c1; }
+  #sidebar a .badge.interact { background: var(--grey); }
+  #sidebar a .badge.new { background: var(--new); }
+
+  /* MAIN */
+  #main { margin-left: 230px; padding: 30px; flex: 1; max-width: calc(100vw - 230px); }
+
+  /* CARDS */
+  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .card h2 { font-size: 18px; color: var(--blue); margin-bottom: 6px; }
+  .card .subtitle { color: var(--grey); font-size: 13px; margin-bottom: 16px; }
+
+  /* DAY HEADER */
+  .day-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--light); }
+  .day-num { background: var(--blue); color: white; font-size: 20px; font-weight: 700; padding: 6px 14px; border-radius: 8px; white-space: nowrap; }
+  .day-title { font-size: 17px; font-weight: 600; color: var(--blue); }
+  .day-meta { font-size: 12px; color: var(--grey); margin-top: 3px; }
+  .status-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+  .status-ready { background: #d4edda; color: #155724; }
+  .status-canva { background: #fff3cd; color: #856404; }
+  .status-story { background: #e8d5ff; color: #4a1d96; }
+  .status-interact { background: #e2e3e5; color: #383d41; }
+  .status-new { background: #d4f5e4; color: #0d4a2a; }
+
+  /* SECTIONS */
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); margin: 16px 0 8px; }
+
+  /* IMAGES */
+  .slides-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+  .slides-row img { height: 180px; width: 180px; object-fit: cover; border-radius: 8px; border: 2px solid var(--light); cursor: zoom-in; flex-shrink: 0; }
+  .slides-row img:hover { border-color: var(--teal); }
+  .reel-img { height: 220px; width: 120px; object-fit: cover; border-radius: 8px; border: 2px solid var(--light); }
+
+  /* CAPTION BOX */
+  .caption-box { background: var(--light); border: 1px solid #c8d6f5; border-radius: 8px; padding: 14px 16px; position: relative; }
+  .caption-box pre { white-space: pre-wrap; font-family: inherit; font-size: 13px; line-height: 1.7; color: #1a1a2e; }
+  .copy-btn { position: absolute; top: 10px; right: 10px; background: var(--blue); color: white; border: none; border-radius: 6px; padding: 4px 12px; font-size: 11px; cursor: pointer; }
+  .copy-btn:hover { background: var(--teal); }
+  .copy-btn.copied { background: var(--green); }
+
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start; }
+  .step-num { counter-increment: step; content: counter(step); background: var(--blue); color: white; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-text { font-size: 13px; line-height: 1.6; }
+
+  /* WARN */
+  .warn-box { background: #fff8e1; border-left: 4px solid #ffc107; border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 13px; margin: 12px 0; color: #5d4037; }
+  .info-box { background: #e8f5e9; border-left: 4px solid var(--teal); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 13px; margin: 12px 0; color: #1b5e20; }
+  .new-box { background: #e8f5ef; border-left: 4px solid var(--new); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 13px; margin: 12px 0; color: var(--new); font-weight: 600; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--blue); color: white; padding: 8px 12px; text-align: left; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--light); }
+  tr:hover td { background: var(--light); }
+  tr.new-row td { background: #e8f5ef; }
+
+  /* HIGHLIGHT COVERS */
+  .highlights-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .highlight-item { text-align: center; }
+  .highlight-item img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--teal); }
+  .highlight-item p { font-size: 11px; color: var(--grey); margin-top: 4px; }
+
+  /* PROFILE */
+  .profile-wrap { display: flex; gap: 20px; align-items: flex-start; }
+  .profile-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--teal); flex-shrink: 0; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* TAG */
+  .tag { display: inline-block; background: var(--light); color: var(--blue); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
+  .tag.teal { background: #e0f5f3; color: var(--teal); }
+
+  /* SECTION DIVIDER */
+  .section-divider { border: none; border-top: 2px solid var(--light); margin: 32px 0; }
+
+  /* MODAL */
+  #imgModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; }
+  #imgModal.show { display: flex; }
+  #imgModal img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+  #imgModal span { position: fixed; top: 20px; right: 30px; color: white; font-size: 36px; cursor: pointer; line-height: 1; }
+
+  h3 { font-size: 15px; color: var(--blue); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="brand">
+    <h2>Stanley IG 主控台</h2>
+    <p>痛症方案顧問 | 30日執行</p>
+  </div>
+
+  <div class="nav-section">帳號設定</div>
+  <a href="#setup">帳號設定（首次）</a>
+  <a href="#profile">頭像 & Highlight</a>
+
+  <div class="nav-section">Week 1（建立期）</div>
+  <a href="#day1">Day 1 — 帳號介紹 <span class="badge done">圖已備</span></a>
+  <a href="#day2">Day 2 — Story 投票 <span class="badge story">Story</span></a>
+  <a href="#day3">Day 3 — 個人故事 Reel <span class="badge done">圖已備</span></a>
+  <a href="#day4">Day 4 — Story Q&A <span class="badge story">Story</span></a>
+  <a href="#day5">Day 5 — 互動日 <span class="badge interact">互動</span></a>
+  <a href="#day6">Day 6 — Story 日常 <span class="badge story">Story</span></a>
+  <a href="#day7">Day 7 — 互動日 <span class="badge interact">互動</span></a>
+
+  <div class="nav-section">Week 2（引流期）</div>
+  <a href="#day8">Day 8 — 個案分享 #1 <span class="badge done">圖已備</span></a>
+  <a href="#day9">Day 9 — Story 貼士 <span class="badge story">Story</span></a>
+  <a href="#day10">Day 10 — 熱敷vs凍敷 Reel <span class="badge done">圖已備</span></a>
+  <a href="#day11">Day 11 — 局內人說話 <span class="badge new">NEW</span></a>
+  <a href="#day12">Day 12 — 急救貼士 <span class="badge canva">Canva</span></a>
+
+  <div class="nav-section">Week 3（爆發期）</div>
+  <a href="#day15">Day 15 — 個案分享 #2 <span class="badge canva">Canva</span></a>
+  <a href="#day17">Day 17 — 核武 Reel <span class="badge done">圖已備</span></a>
+  <a href="#day19">Day 19 — 衝擊波科普 <span class="badge canva">Canva</span></a>
+  <a href="#day20">Day 20 — 痛症地圖 <span class="badge new">NEW</span></a>
+
+  <div class="nav-section">Week 4（深化期）</div>
+  <a href="#day22">Day 22 — 個案分享 #3 <span class="badge canva">Canva</span></a>
+  <a href="#day23">Day 23 — 性格類型 <span class="badge new">NEW</span></a>
+  <a href="#day24">Day 24 — 3種療法 Reel <span class="badge canva">Canva</span></a>
+  <a href="#day26">Day 26 — 個案分享 #4 <span class="badge canva">Canva</span></a>
+  <a href="#day29">Day 29 — 個案分享 #5 <span class="badge canva">Canva</span></a>
+  <a href="#day30">Day 30 — 30日總結 Reel <span class="badge canva">Canva</span></a>
+
+  <div class="nav-section">工具</div>
+  <a href="#templates">DM 回覆模板</a>
+  <a href="#hashtags">Hashtag 清單</a>
+  <a href="#brand">品牌規範</a>
+</nav>
+
+<!-- IMAGE MODAL -->
+<div id="imgModal"><span onclick="closeModal()">&#215;</span><img id="modalImg" src=""></div>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+  <!-- PAGE TITLE -->
+  <div style="margin-bottom:24px;">
+    <h1 style="font-size:24px;color:var(--blue);">Stanley IG 主控台</h1>
+    <p style="color:var(--grey);font-size:13px;margin-top:4px;">更新日期：2026年5月17日 | 版本 v2.0 | 跟著每個 Day 執行，唔需要到處搵</p>
+  </div>
+
+  <!-- 帳號設定 -->
+  <div class="card" id="setup">
+    <h2>帳號設定（Day 1 前一次性完成）</h2>
+    <p class="subtitle">以下設定只需做一次，之後唔需要再改</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-label">IG Bio（直接 Copy）</div>
+        <div class="caption-box">
+          <button class="copy-btn" onclick="copyText(this)">Copy</button>
+          <pre>痛症方案顧問 | 見過幾百個案
+幫你搵啱方向，唔係幫你賣嘢
+👇 DM 我「評估」— 15分鐘電話</pre>
+        </div>
+        <div class="warn-box">帳號名稱建議：<strong>stanley.paincare.hk</strong><br>一旦開始唔好改，影響搜尋排名</div>
+      </div>
+      <div>
+        <div class="section-label">DM 首句回覆模板</div>
+        <div class="caption-box">
+          <button class="copy-btn" onclick="copyText(this)">Copy</button>
+          <pre>你好！我係Stanley，收到你嘅訊息。
+可以約15分鐘電話了解你情況嗎？
+唔收費，唔推銷，直接同你講。</pre>
+        </div>
+        <div class="section-label" style="margin-top:12px;">Canva 品牌設定</div>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">登入 Canva → 右上角名字 → Brand Kit</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">加顏色：<strong>#1B3A6B</strong>（深藍）、<strong>#2A9D8F</strong>（青綠）、<strong>#FFFFFF</strong>（白）</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">字體：標題 Noto Sans TC Bold，內文 Noto Sans TC Regular</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">新帖尺寸：Carousel 用 1080×1080，Reel 封面用 1080×1920</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 頭像 & Highlights -->
+  <div class="card" id="profile">
+    <h2>頭像 & Highlight 封面</h2>
+    <p class="subtitle">已全部生成，直接上傳到 IG 即可</p>
+    <div class="profile-wrap">
+      <div style="text-align:center;">
+        <img class="profile-img" src="IG_Assets/profile/profile_picture.png" alt="Profile" onclick="openModal(this.src)">
+        <p style="font-size:11px;color:var(--grey);margin-top:6px;">頭像</p>
+      </div>
+      <div>
+        <div class="section-label">Highlight 封面（5個）</div>
+        <div class="highlights-row">
+          <div class="highlight-item"><img src="IG_Assets/highlights/個案分享.png" onclick="openModal(this.src)"><p>個案分享</p></div>
+          <div class="highlight-item"><img src="IG_Assets/highlights/痛症教育.png" onclick="openModal(this.src)"><p>痛症教育</p></div>
+          <div class="highlight-item"><img src="IG_Assets/highlights/療法科普.png" onclick="openModal(this.src)"><p>療法科普</p></div>
+          <div class="highlight-item"><img src="IG_Assets/highlights/生活日常.png" onclick="openModal(this.src)"><p>生活日常</p></div>
+          <div class="highlight-item"><img src="IG_Assets/highlights/免費評估.png" onclick="openModal(this.src)"><p>免費評估</p></div>
+        </div>
+        <div class="info-box">IG → 個人頁面 → 新增 Highlight → 上傳對應封面圖</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h3 style="color:var(--grey);font-size:13px;margin-bottom:16px;">── WEEK 1：帳號建立期（Day 1–7）──</h3>
+
+  <!-- DAY 1 -->
+  <div class="card" id="day1">
+    <div class="day-header">
+      <div class="day-num">Day 1</div>
+      <div>
+        <div class="day-title">帳號介紹 Carousel（4張）</div>
+        <div class="day-meta">週一 | 格式：Carousel</div>
+      </div>
+      <div class="status-badge status-ready">圖已生成 ✓</div>
+    </div>
+
+    <div class="warn-box">⚠️ 上傳前：先把 Slide 2「X 年痛症管理經驗」改成你真實年數</div>
+
+    <div class="section-label">4張圖（按順序上傳）</div>
+    <div class="slides-row">
+      <img src="IG_Assets/day01_intro/slide_01_cover.png" title="封面" onclick="openModal(this.src)">
+      <img src="IG_Assets/day01_intro/slide_02_who.png" title="我係邊個" onclick="openModal(this.src)">
+      <img src="IG_Assets/day01_intro/slide_03_content.png" title="內容預覽" onclick="openModal(this.src)">
+      <img src="IG_Assets/day01_intro/slide_04_cta.png" title="CTA" onclick="openModal(this.src)">
+    </div>
+    <p style="font-size:11px;color:var(--grey);margin-top:4px;">點擊圖片可放大</p>
+
+    <div class="section-label">Caption（直接 Copy）</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>我係 Stanley，痛症方案顧問。
+唔係醫生，唔係治療師——
+但過去 [X] 年，我見過幾百個有痛症問題的人。
+
+呢個 IG，我會每週分享：
+📂 真實個案（全部匿名）
+🔬 拆解坊間痛症謬誤
+💊 唔同療法比較同解釋
+
+有痛症困擾？DM 我「評估」，15分鐘電話了解你情況 😊
+
+#痛症 #痛症管理 #香港痛症 #肩頸痛 #腰背痛 #坐骨神經痛 #痛症顧問</pre>
+    </div>
+
+    <div class="section-label">上傳步驟</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">IG → 新增帖子 → 選 slide_01 至 slide_04（按順序）</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">貼上 Caption，把 [X] 改成真實年數</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">地點：可以加「香港」</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-text">發布後把帖子存入「個案分享」Highlight</div></div>
+    </div>
+  </div>
+
+  <!-- DAY 2 -->
+  <div class="card" id="day2">
+    <div class="day-header">
+      <div class="day-num">Day 2</div>
+      <div><div class="day-title">Story：投票問卷</div><div class="day-meta">週二 | 格式：Story</div></div>
+      <div class="status-badge status-story">Story（IG直接做）</div>
+    </div>
+    <div class="info-box">Story 直接在 IG 製作，唔需要提前準備圖</div>
+    <div class="section-label">操作步驟</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">IG → 相機 → Story → 選「深藍」背景色（#1B3A6B）</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">加文字（白色）：「你而家最困擾你嘅係？」</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">貼紙 → 投票 → 選項 A：頸/肩/背痛　B：膝蓋/關節痛</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-text">發布。記下投票結果，決定第8日個案主題。</div></div>
+    </div>
+  </div>
+
+  <!-- DAY 3 -->
+  <div class="card" id="day3">
+    <div class="day-header">
+      <div class="day-num">Day 3</div>
+      <div><div class="day-title">個人故事 Reel（60秒）</div><div class="day-meta">週三 | 格式：Reel</div></div>
+      <div class="status-badge status-ready">封面圖已備 ✓</div>
+    </div>
+    <div class="warn-box">⚠️ 最重要嘅一條 Reel——唔夠好就重拍，唔好將就</div>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-label">封面圖</div>
+        <img class="reel-img" src="IG_Assets/day03_reel/reel_cover.png" onclick="openModal(this.src)">
+      </div>
+      <div>
+        <div class="section-label">拍攝設定</div>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">地點：梳化/辦公枱前，白牆背景</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">光線：自然光從側面，唔好背光</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">著裝：深色上衣（深藍/黑/深灰）</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">手機架固定，鏡頭對準胸口以上</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">開場停頓1秒先開口，望住鏡頭</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">完整腳本（60秒）</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>【開場 0-5秒】
+「你有冇試過痛到訓唔著，但去睇醫生，佢話你冇事？」
+
+【中段 5-40秒】
+「我叫 Stanley，我唔係醫生，唔係物理治療師。
+但過去[X]年，我見過幾百個有痛症問題嘅人。
+入行之前，我自己身邊[家人/朋友]有[痛症問題]——
+佢試過[中醫/西醫/物理治療]，成效唔理想，
+後來係因為[某個方法]先真正改善。
+
+我唔係因為呢行賺錢先做——
+我係因為想搞清楚，點解咁多人痛咗咁耐都搵唔到方法。
+
+呢兩年我睇過幾百個案，我發現一件事：
+大部分人唔係治療做得唔好，係一開始搵錯咗方向。」
+
+【結尾 40-60秒】
+「所以我開咗呢個 IG。每週分享真實個案、拆解常見謬誤、
+同你解釋唔同療法係點運作。
+如果你有痛症問題，唔知應該點樣開始——
+Follow 住先，或者 DM 我「評估」，15分鐘電話傾下你情況。」</pre>
+    </div>
+
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>點解我會做痛症方案顧問？
+
+唔係因為呢行賺錢——
+係因為我見過太多人，痛咗幾年，試過好多方法，但搵唔到啱自己的方案。
+
+呢個 IG：📂 真實個案 | 🔬 謬誤破解 | 💊 療法比較
+
+有任何痛症困擾，DM 我「評估」，15分鐘電話了解你情況 😊
+
+#痛症 #痛症管理 #個人故事 #香港 #痛症顧問</pre>
+    </div>
+  </div>
+
+  <!-- DAY 4, 5, 6, 7 -->
+  <div class="card" id="day4">
+    <div class="day-header">
+      <div class="day-num">Day 4</div>
+      <div><div class="day-title">Story：Q&A 問答</div><div class="day-meta">週四</div></div>
+      <div class="status-badge status-story">Story</div>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">Story → 白/淺藍背景 → 文字：「你有咩關於痛症嘅問題想問我？」</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">貼紙 → 問答貼紙</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">收到問題 → Day 6 Story 回答</div></div>
+    </div>
+  </div>
+
+  <div class="card" id="day5" style="background:#f8f9fa;">
+    <div class="day-header">
+      <div class="day-num">Day 5</div>
+      <div><div class="day-title">互動日（唔發帖）</div><div class="day-meta">週五 | 15分鐘</div></div>
+      <div class="status-badge status-interact">互動</div>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">去 #痛症 #肩頸痛 #腰背痛 下留有意義留言（唔係只打emoji）</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">回覆所有 Day 1-4 嘅留言</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">回覆 DM（用上面嘅 DM 模板）</div></div>
+    </div>
+  </div>
+
+  <div class="card" id="day6">
+    <div class="day-header">
+      <div class="day-num">Day 6</div>
+      <div><div class="day-title">Story：日常 + 投票</div><div class="day-meta">週六</div></div>
+      <div class="status-badge status-story">Story</div>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">隨手拍一個日常畫面（食早餐/工作環境）</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">文字：「準備緊下週個案分享——你最想睇邊類？」</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">投票貼紙：頸肩痛 / 膝蓋痛 / 腰背痛 / 其他</div></div>
+    </div>
+  </div>
+
+  <div class="card" id="day7" style="background:#f8f9fa;">
+    <div class="day-header">
+      <div class="day-num">Day 7</div>
+      <div><div class="day-title">互動日</div><div class="day-meta">週日</div></div>
+      <div class="status-badge status-interact">互動</div>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">回覆所有本週留言</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">查看 Story 投票結果，記低受眾最多咩痛症</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">根據投票結果，確認 Day 8 個案主題</div></div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h3 style="color:var(--grey);font-size:13px;margin-bottom:16px;">── WEEK 2：內容引流期（Day 8–14）──</h3>
+
+  <!-- DAY 8 -->
+  <div class="card" id="day8">
+    <div class="day-header">
+      <div class="day-num">Day 8</div>
+      <div><div class="day-title">個案分享 #1（頸痛2年）</div><div class="day-meta">週一 | Carousel 6張</div></div>
+      <div class="status-badge status-ready">圖已生成 ✓</div>
+    </div>
+    <div class="section-label">6張圖（按順序上傳）</div>
+    <div class="slides-row">
+      <img src="IG_Assets/day08_case/slide_01_cover.png" onclick="openModal(this.src)">
+      <img src="IG_Assets/day08_case/slide_02_background.png" onclick="openModal(this.src)">
+      <img src="IG_Assets/day08_case/slide_03_problem.png" onclick="openModal(this.src)">
+      <img src="IG_Assets/day08_case/slide_04_failed.png" onclick="openModal(this.src)">
+      <img src="IG_Assets/day08_case/slide_05_result.png" onclick="openModal(this.src)">
+      <img src="IG_Assets/day08_case/slide_06_cta.png" onclick="openModal(this.src)">
+    </div>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>【頸痛2年，做過物理治療都冇用？】
+📂 個案分享第 1 回  #Stanley痛症個案
+
+🙋🏻 客人背景：30歲出頭，銀行文職
+🎯 困擾：頸椎痛 + 頭痛，每日對住電腦8小時
+🚨 試過：物理治療6次、按摩器、止痛藥——全部治標不治本
+✅ 方案：衝擊波 + 姿勢矯正（根源係頸椎輕微錯位）
+📈 4次後：頭痛消失，活動度改善，冇再反覆
+
+唔知自己係咪同樣情況？DM 我「評估」，15分鐘電話傾 😊
+
+#頸椎痛 #頸痛 #頭痛 #辦公室痛症 #痛症 #痛症管理 #衝擊波治療 #香港痛症</pre>
+    </div>
+  </div>
+
+  <!-- DAY 9 -->
+  <div class="card" id="day9">
+    <div class="day-header">
+      <div class="day-num">Day 9</div>
+      <div><div class="day-title">Story：頸痛延伸貼士</div><div class="day-meta">週二</div></div>
+      <div class="status-badge status-story">Story</div>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">分享一個跟 Day 8 個案相關嘅小貼士（例：頸痛族最常忽略的一個動作）</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">可以截圖 Day 8 帖子放入 Story，加文字延伸</div></div>
+    </div>
+  </div>
+
+  <!-- DAY 10 -->
+  <div class="card" id="day10">
+    <div class="day-header">
+      <div class="day-num">Day 10</div>
+      <div><div class="day-title">迷思破解 Reel：熱敷 vs 凍敷</div><div class="day-meta">週三 | Reel 45秒</div></div>
+      <div class="status-badge status-ready">封面圖已備 ✓</div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="section-label">封面圖</div>
+        <img class="reel-img" src="IG_Assets/day10_myth/reel_cover.png" onclick="openModal(this.src)">
+      </div>
+      <div>
+        <div class="section-label">腳本重點（45秒）</div>
+        <div class="caption-box">
+          <button class="copy-btn" onclick="copyText(this)">Copy</button>
+          <pre>【開場】「拉傷咗第一時間熱敷？你可能愈敷愈差。」
+
+急性受傷（頭48小時）→ 凍敷
+慢性痛症（長期反覆）→ 熱敷
+
+【結尾CTA】「唔確定係哪種？
+Comment 打「評估」，即刻 PM 你份自我判斷指引。」</pre>
+        </div>
+      </div>
+    </div>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>熱敷定凍敷？9成人整錯
+
+急性受傷（頭48小時）→ 凍敷
+慢性痛症（長期反覆）→ 熱敷
+
+搞錯咗唔係冇效，係愈搞愈差
+
+👇 Comment 打「評估」，即刻 PM 你份自我判斷指引
+
+#痛症 #熱敷 #凍敷 #頸痛 #腰痛 #痛症常識 #香港痛症</pre>
+    </div>
+  </div>
+
+  <!-- DAY 11 NEW -->
+  <div class="card" id="day11" style="border-left:4px solid var(--new);">
+    <div class="day-header">
+      <div class="day-num">Day 11</div>
+      <div><div class="day-title">【局內人說話 #1】行業真相 Carousel</div><div class="day-meta">週四 | Carousel 4張</div></div>
+      <div class="status-badge status-new">v2 新增</div>
+    </div>
+    <div class="new-box">v2 新增系列。差異化最強——業界人知但唔敢公開講嘅事。</div>
+
+    <div class="section-label">在 Canva 製作（4頁）</div>
+    <table>
+      <tr><th>頁</th><th>背景</th><th>內容</th></tr>
+      <tr><td>封面</td><td>深藍 #1B3A6B</td><td>大字：「物理治療做完好 / 停咗又痛返 / 因為冇人話你知呢件事」</td></tr>
+      <tr><td>第2頁</td><td>白底</td><td>標題：「真正原因」+ 說明肌肉失衡/姿勢問題/舊患</td></tr>
+      <tr><td>第3頁</td><td>白底</td><td>標題：「業界現實」+ 顧問視角解釋</td></tr>
+      <tr><td>第4頁</td><td>深藍</td><td>CTA：「DM 我『評估』，局內人同你講清楚」</td></tr>
+    </table>
+
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>【局內人說話 #1】物理治療做完好，停咗又痛返？
+
+唔係你做得唔夠，也唔係PT無效——
+係因為冇人告訴你，療程解決症狀，唔係根源。
+
+見過太多人：PT做咗20次，好咗，停咗，3個月後痛返——再做20次。
+係呢個循環有問題，唔係你。
+
+如果你係咁，DM 我「評估」——15分鐘電話，局內人角度分析你情況。
+唔推銷，直接講。
+
+#物理治療 #痛症 #痛症管理 #局內人 #頸痛 #腰背痛 #香港痛症</pre>
+    </div>
+  </div>
+
+  <!-- DAY 12 -->
+  <div class="card" id="day12">
+    <div class="day-header">
+      <div class="day-num">Day 12</div>
+      <div><div class="day-title">辦公室急救貼士 Carousel（5張）</div><div class="day-meta">週五 | Canva 製作</div></div>
+      <div class="status-badge status-canva">需要 Canva</div>
+    </div>
+    <div class="section-label">Canva 製作指引（5頁）</div>
+    <table>
+      <tr><th>頁</th><th>內容</th></tr>
+      <tr><td>封面</td><td>深藍背景 | 大字：「OT 頸痛 / 即時急救 / 3個動作」</td></tr>
+      <tr><td>動作1</td><td>頸部側伸展 — 頭側向右，右手加壓，保持15秒</td></tr>
+      <tr><td>動作2</td><td>肩膀後收 — 夾肩胛骨，保持10秒，重複5次</td></tr>
+      <tr><td>動作3</td><td>Chin Tuck 頸後縮 — 下巴向後縮，保持5秒，重複10次</td></tr>
+      <tr><td>第5頁</td><td>深藍 CTA：「做完仲係痛？DM 我『評估』」</td></tr>
+    </table>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>OT 頸痛急救 3招
+
+第1招：頸部側伸展
+第2招：肩膀後收
+第3招：Chin Tuck 頸後縮
+
+每日做，5分鐘，收工即刻做
+
+如果做完仲係痛，或者痛超過2週——
+DM 我「評估」，可能唔係「累」，係需要認真分析
+
+#頸痛 #OT #辦公室痛症 #頸椎痛 #打工仔 #痛症管理 #香港痛症</pre>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h3 style="color:var(--grey);font-size:13px;margin-bottom:16px;">── WEEK 3：互動爆發期（Day 15–21）──</h3>
+
+  <!-- DAY 15 -->
+  <div class="card" id="day15">
+    <div class="day-header">
+      <div class="day-num">Day 15</div>
+      <div><div class="day-title">個案分享 #2（膝蓋退化）</div><div class="day-meta">週一 | Canva 製作（參考 Day 8 格式）</div></div>
+      <div class="status-badge status-canva">需要 Canva</div>
+    </div>
+    <div class="info-box">格式同 Day 8 完全一樣，只係換個案內容。在 Canva 複製 Day 8 模板改內容。</div>
+    <div class="section-label">個案內容</div>
+    <table>
+      <tr><th>欄目</th><th>內容</th></tr>
+      <tr><td>客人背景</td><td>50歲，家庭主婦</td></tr>
+      <tr><td>困擾</td><td>膝關節退化，落樓梯必定痛，骨科建議考慮換骨</td></tr>
+      <tr><td>試過方法</td><td>玻尿酸針 / 消炎藥（胃副作用）/ 護膝</td></tr>
+      <tr><td>最終方案</td><td>體外衝擊波 + 股四頭肌訓練</td></tr>
+      <tr><td>效果</td><td>3個月後：痛感由8分降至2分，暫唔需要手術</td></tr>
+      <tr><td>封面文字</td><td>「膝蓋痛到以為要換骨 / 最後唔使手術」</td></tr>
+    </table>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>【膝蓋痛到以為要換骨，最後唔使手術】
+📂 個案分享第 2 回  #Stanley痛症個案
+
+🙋🏻 50歲，家庭主婦
+🎯 膝關節退化，落樓梯必定痛
+🚨 玻尿酸針、消炎藥、護膝——冇根治
+✅ 衝擊波 + 股四頭肌訓練（根源係肌肉太弱）
+📈 3個月後：痛感由8分降至2分，暫唔需要手術
+
+退化係無法逆轉嘅，但「痛」係可以控制嘅。
+DM 我「評估」，唔一定要手術先係唯一出路 😊
+
+#膝蓋痛 #膝關節退化 #退化性關節炎 #痛症 #痛症管理 #香港痛症</pre>
+    </div>
+  </div>
+
+  <!-- DAY 17 -->
+  <div class="card" id="day17" style="border-left:4px solid #dc3545;">
+    <div class="day-header">
+      <div class="day-num">Day 17</div>
+      <div><div class="day-title">留言換資料 Reel【核武】</div><div class="day-meta">週三 | Reel 60秒</div></div>
+      <div class="status-badge status-ready">封面圖已備 ✓</div>
+    </div>
+    <div class="warn-box">⚠️ 整個30日計劃最重要嘅一條。發佈前必須備好下面嘅物料，唔然接唔住流量。</div>
+
+    <div class="section-label" style="color:#dc3545;">Day 17 發佈前必備物料</div>
+    <table>
+      <tr><th>物料</th><th>說明</th><th>狀態</th></tr>
+      <tr><td>「慢性痛症根源自我判斷清單」PDF</td><td>5條問題幫讀者判斷根源類型，A4單頁，底部加聯絡方式</td><td style="color:#dc3545;">⚠️ 需要準備</td></tr>
+      <tr><td>DM 標準回覆</td><td>收到「止痛」留言後即刻 PM 的第一句</td><td style="color:#28a745;">✅ 在下面</td></tr>
+      <tr><td>發佈當天在線</td><td>發佈後第一個鐘要在線，Comment 一到即刻 PM</td><td style="color:#fd7e14;">⚠️ 記住</td></tr>
+    </table>
+
+    <div class="section-label">DM 回覆模板（Comment 打「止痛」後發送）</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>你好！收到你嘅留言，
+附上份【慢性痛症根源自我判斷清單】俾你：[附上PDF]
+
+睇完如果有問題，或者想了解更多——
+可以約15分鐘電話傾下，唔收費，唔推銷。
+你方便嗎？</pre>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-label">封面圖</div>
+        <img class="reel-img" src="IG_Assets/day17_reel/reel_cover.png" onclick="openModal(this.src)">
+      </div>
+      <div>
+        <div class="section-label">腳本重點（60秒）</div>
+        <div class="caption-box">
+          <button class="copy-btn" onclick="copyText(this)">Copy</button>
+          <pre>【開場】「你食止痛藥，食完唔痛，
+停咗又痛返——你有冇諗過，
+係咪你一直食錯咗？」
+
+止痛藥 = 拆咗火警警報器
+根源仲係喺度燒
+
+慢性痛症根源通常係：
+1. 肌肉失衡
+2. 關節錯位
+3. 筋膜沾黏
+
+【結尾CTA】「Comment 打『止痛』
+即刻 PM 你份自我判斷清單。」</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>止痛藥食完又痛返？唔係你食得唔夠，係你搵錯方向了
+
+止痛藥 = 關閉警報器，根源問題 = 火依然喺燒
+
+慢性痛症根源通常得幾樣：
+1. 肌肉失衡
+2. 關節錯位
+3. 筋膜沾黏
+
+👇 Comment 打「止痛」
+即刻 PM 你份【慢性痛症根源自我判斷清單】
+免費，直接用
+
+#止痛藥 #慢性痛症 #痛症根源 #頸痛 #腰痛 #痛症管理 #香港痛症</pre>
+    </div>
+  </div>
+
+  <!-- DAY 19 -->
+  <div class="card" id="day19">
+    <div class="day-header">
+      <div class="day-num">Day 19</div>
+      <div><div class="day-title">療法科普：衝擊波（5張）</div><div class="day-meta">週五 | Canva 製作</div></div>
+      <div class="status-badge status-canva">需要 Canva</div>
+    </div>
+    <table>
+      <tr><th>頁</th><th>內容</th></tr>
+      <tr><td>封面</td><td>深藍 | 「衝擊波治療 / 係咩？ / 用3分鐘解釋清楚」</td></tr>
+      <tr><td>第2頁：原理</td><td>聲波能量 → 刺激細胞再生 / 促進血液循環 / 打散鈣化 / 啟動修復</td></tr>
+      <tr><td>第3頁：適合</td><td>✅ 慢性肌腱炎 / 肌腱撕裂 / 鈣化性肌腱炎 / 運動創傷</td></tr>
+      <tr><td>第4頁：不適合</td><td>❌ 急性炎症期 / 骨折未癒合 / 懷孕 / 凝血問題</td></tr>
+      <tr><td>第5頁</td><td>深藍 CTA：「想知自己係咪適合？DM 我『評估』」</td></tr>
+    </table>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>衝擊波係咩？唔係電療，唔係打針
+
+好多客第一次聽「衝擊波」都一面懵
+今次幫大家解釋清楚——包括哪些人不適合做
+
+向左掃睇完整解釋 👉
+
+有問題？DM 我「評估」，免費了解你情況
+
+#衝擊波 #衝擊波治療 #痛症治療 #肌腱炎 #足底筋膜炎 #網球肘 #運動創傷</pre>
+    </div>
+  </div>
+
+  <!-- DAY 20 NEW -->
+  <div class="card" id="day20" style="border-left:4px solid var(--new);">
+    <div class="day-header">
+      <div class="day-num">Day 20</div>
+      <div><div class="day-title">【香港人痛症地圖 #1】港鐵打工仔 Reel</div><div class="day-meta">週六 | Reel 45秒</div></div>
+      <div class="status-badge status-new">v2 新增</div>
+    </div>
+    <div class="new-box">輕鬆幽默語氣，令香港打工仔一睇就「係呀我」，極易轉發。</div>
+    <div class="section-label">腳本（45秒）</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>【開場】「每日搭港鐵，低頭睇手機——你條頸知道你做緊咩。」
+
+每日：搭港鐵低頭45分鐘 → 返工坐8小時 → 收工再45分鐘
+
+低頭45度時，頸承受22公斤壓力。
+（你個頭大概5公斤）
+
+好多人嘅慢性頸痛唔係病，係習慣。
+改唔到搭港鐵，但有啲嘢你可以做。
+
+【結尾】「Comment 打『頸痛』，PM 你份港鐵族頸痛急救指南。」</pre>
+    </div>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>香港人痛症地圖 #1：港鐵打工仔篇
+
+搭港鐵低頭45度 → 頸部承受22公斤壓力
+
+呢唔係危言聳聽，係你條頸每日嘅現實。
+
+每日港鐵 + 辦公室 + 手機——三重疊加，難怪頸痛係香港最普遍嘅痛症。
+
+👇 Comment 打「頸痛」，PM 你份港鐵族頸痛急救指南
+
+你係邊區嘅港鐵族？Comment 落嚟 😂
+
+#香港 #港鐵 #打工仔 #頸痛 #辦公室痛症 #痛症 #香港人</pre>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h3 style="color:var(--grey);font-size:13px;margin-bottom:16px;">── WEEK 4：深化建立期（Day 22–30）──</h3>
+
+  <!-- DAY 22 -->
+  <div class="card" id="day22">
+    <div class="day-header">
+      <div class="day-num">Day 22</div>
+      <div><div class="day-title">個案分享 #3（健身男肩痛）</div><div class="day-meta">週一 | Carousel 6張</div></div>
+      <div class="status-badge status-canva">需要 Canva</div>
+    </div>
+    <table>
+      <tr><th>欄目</th><th>內容</th></tr>
+      <tr><td>客人背景</td><td>28歲，自僱，健身3年</td></tr>
+      <tr><td>困擾</td><td>Bench Press 右肩刺痛，右手舉高就痛，停健身2個月仍反覆</td></tr>
+      <tr><td>試過方法</td><td>痛症貼布 / 跌打 / 休息（全部無根治）</td></tr>
+      <tr><td>最終方案</td><td>體外衝擊波 + 旋轉肌專項訓練</td></tr>
+      <tr><td>效果</td><td>6次後：恢復訓練無刺痛，重量仲升咗</td></tr>
+      <tr><td>封面文字</td><td>「健身男 / 忍痛練落去 / 係最錯嘅決定」</td></tr>
+    </table>
+  </div>
+
+  <!-- DAY 23 NEW -->
+  <div class="card" id="day23" style="border-left:4px solid var(--new);">
+    <div class="day-header">
+      <div class="day-num">Day 23</div>
+      <div><div class="day-title">【痛症性格類型】轉發炸彈 Carousel</div><div class="day-meta">週二 | Carousel 5張</div></div>
+      <div class="status-badge status-new">v2 新增 | 病毒傳播</div>
+    </div>
+    <div class="new-box">目標：讀者轉發俾朋友——Tag 朋友機制，係所有帖中傳播力最強嘅一類。</div>
+    <table>
+      <tr><th>頁</th><th>內容</th></tr>
+      <tr><td>封面</td><td>深藍 | 「你係哪種痛症人？/ 4種類型 / 第幾種係你？」</td></tr>
+      <tr><td>第2頁</td><td>😤 忍痛型：「痛？忍吓囉。係咁㗎啦。」→ 後果：忍到變慢性</td></tr>
+      <tr><td>第3頁</td><td>💊 Panadol 型：「食粒止痛藥就好㗎喇。」→ 後果：火警警報拆咗但火仲燒</td></tr>
+      <tr><td>第4頁</td><td>🔍 Google 型：「睇完10篇文章，仲係唔知應該點」→ 後果：資訊≠判斷</td></tr>
+      <tr><td>第5頁</td><td>深藍 | 「你係哪種？Tag 你識嘅[忍痛型]朋友 / DM 我『評估』」</td></tr>
+    </table>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>你係哪種痛症人？
+
+😤 忍痛型：「係咁㗎啦，大家都係咁」
+💊 Panadol 型：「食粒先，唔痛就係好咗」
+🔍 Google 型：「我自己診斷好，唔使睇醫生」
+
+三種類型，三種後果——但有一個共同點：
+最後都係問題更大嗰個。
+
+Tag 你識嘅[忍痛型]朋友 😂
+Comment 你係哪種？
+
+如果你唔想做任何一種——DM 我「評估」，15分鐘電話了解你情況。
+
+#痛症 #香港人 #止痛藥 #痛症管理 #你係哪種 #香港痛症</pre>
+    </div>
+  </div>
+
+  <!-- DAY 24 -->
+  <div class="card" id="day24">
+    <div class="day-header">
+      <div class="day-num">Day 24</div>
+      <div><div class="day-title">比較 Reel：中醫 vs 物理治療 vs 儀器治療</div><div class="day-meta">週三 | Reel 60秒</div></div>
+      <div class="status-badge status-canva">需要 Canva（封面）</div>
+    </div>
+    <div class="section-label">腳本重點</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>中醫：整體調理。適合慢性/反覆/體質偏弱。
+物理治療：運動矯正。適合姿勢問題/術後康復。
+儀器治療（衝擊波）：直接修復組織。適合肌腱炎/PT效果唔理想。
+
+唔係哪個最好——係你係哪種情況就用哪種。
+
+【結尾】「唔確定？DM 我『評估』，15分鐘電話幫你判斷。」</pre>
+    </div>
+  </div>
+
+  <!-- DAY 26 -->
+  <div class="card" id="day26">
+    <div class="day-header">
+      <div class="day-num">Day 26</div>
+      <div><div class="day-title">個案分享 #4（坐骨神經痛）</div><div class="day-meta">週五 | Carousel 6張</div></div>
+      <div class="status-badge status-canva">需要 Canva</div>
+    </div>
+    <div class="warn-box">⚠️ 呢個係原型個案，Stanley 要核實是否有親自接觸過類似個案，如有改動請修改數字</div>
+    <table>
+      <tr><th>欄目</th><th>內容</th></tr>
+      <tr><td>客人背景</td><td>40歲出頭，自由工作者，在家工作</td></tr>
+      <tr><td>困擾</td><td>右邊坐骨神經痛 + 右腳麻痹，坐超過30分鐘就痛</td></tr>
+      <tr><td>試過方法</td><td>中醫針灸（短暫舒緩）/ 消炎藥 / 自己拉筋（反而加劇）</td></tr>
+      <tr><td>最終方案</td><td>體外衝擊波 + 核心肌群訓練（根源：梨狀肌緊張壓坐骨神經）</td></tr>
+      <tr><td>效果</td><td>6週後：麻痹感消失，可連續坐2小時工作</td></tr>
+      <tr><td>封面文字</td><td>「坐骨神經痛 / 睇咗大半年 / 終於唔使打針」</td></tr>
+    </table>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>【坐骨神經痛睇咗大半年，終於唔使打針】
+📂 個案分享第 4 回  #Stanley痛症個案
+
+🙋🏻 40歲自由工作者，長期在家工作
+🎯 右邊坐骨神經痛 + 右腳麻痹，坐30分鐘就痹
+🚨 試過：針灸、消炎藥、自己拉筋——全部治標不治本
+✅ 方案：衝擊波 + 核心肌群訓練（根源係梨狀肌壓神經）
+📈 6週後：麻痹消失，可以正常工作，唔再需要打針
+
+坐骨神經痛唔係一定要打針或者開刀——方向對先係關鍵。
+DM 我「評估」，15分鐘電話了解你情況 😊
+
+#坐骨神經痛 #坐骨神經 #腰背痛 #麻痹 #在家工作 #痛症 #痛症管理 #香港痛症</pre>
+    </div>
+  </div>
+
+  <!-- DAY 29 -->
+  <div class="card" id="day29">
+    <div class="day-header">
+      <div class="day-num">Day 29</div>
+      <div><div class="day-title">個案分享 #5（媽媽手）</div><div class="day-meta">週一 | Carousel 6張</div></div>
+      <div class="status-badge status-canva">需要 Canva</div>
+    </div>
+    <div class="warn-box">⚠️ 同 Day 26，請核實是否有類似個案，如有改動請修改</div>
+    <table>
+      <tr><th>欄目</th><th>內容</th></tr>
+      <tr><td>客人背景</td><td>28歲，新手媽媽，BB 3個月大</td></tr>
+      <tr><td>困擾</td><td>右手拇指根部 + 手腕腫痛（媽媽手），抱BB就痛，扭鈕扣都做唔到</td></tr>
+      <tr><td>試過方法</td><td>護腕托板（短暫）/ 消炎藥（哺乳期唔敢食）/ 根本休息唔到</td></tr>
+      <tr><td>最終方案</td><td>體外衝擊波 + 抱BB姿勢調整指導</td></tr>
+      <tr><td>效果</td><td>4次後：痛感由8分降至2分，可以正常抱BB</td></tr>
+      <tr><td>封面文字</td><td>「抱個BB / 痛到想喊 / 唔係你唔捱得」</td></tr>
+    </table>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>【抱個BB痛到想喊——唔係你唔捱得，係媽媽手】
+📂 個案分享第 5 回  #Stanley痛症個案
+
+🙋🏻 28歲新手媽媽，BB 3個月大
+🎯 右手拇指根部 + 手腕腫痛，抱BB就痛，扭鈕扣都做唔到
+🚨 試過：護腕托板、想休息但休息唔到、消炎藥哺乳期唔敢食
+✅ 方案：衝擊波 + 抱BB姿勢調整（根源：腱鞘炎 + 錯誤受力）
+📈 4次後：痛感由8分降至2分，可以正常抱BB照顧小朋友
+
+媽媽手唔係「捱吓就過」——正確方向係關鍵。
+分享俾身邊新手媽媽 😊
+DM 我「評估」，15分鐘電話了解你情況
+
+#媽媽手 #腱鞘炎 #新手媽媽 #手腕痛 #媽媽 #痛症 #痛症管理 #香港痛症 #衝擊波</pre>
+    </div>
+  </div>
+
+  <!-- DAY 30 -->
+  <div class="card" id="day30">
+    <div class="day-header">
+      <div class="day-num">Day 30</div>
+      <div><div class="day-title">30日總結 Reel</div><div class="day-meta">週二 | Reel 60秒</div></div>
+      <div class="status-badge status-canva">需要 Canva（封面）</div>
+    </div>
+    <div class="section-label">Caption</div>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>開咗30日，最多人問我嘅問題係：
+「我試過好多方法，點解都唔work？」
+
+答案通常係：方向未必錯，但順序錯了。
+
+下個月繼續分享更多個案同療法知識。
+有任何痛症問題，DM 我 😊
+
+#痛症 #痛症管理 #香港痛症 #一個月總結</pre>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- TEMPLATES -->
+  <div class="card" id="templates">
+    <h2>DM 回覆模板庫</h2>
+    <p class="subtitle">收到 DM 後直接 copy paste，唔使每次即興</p>
+
+    <h3>模板 1：首次 DM（任何情況）</h3>
+    <div class="caption-box" style="margin-bottom:16px;">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>你好！我係Stanley，收到你嘅訊息。
+可以約15分鐘電話了解你情況嗎？
+唔收費，唔推銷，直接同你講。</pre>
+    </div>
+
+    <h3>模板 2：Comment「止痛」後</h3>
+    <div class="caption-box" style="margin-bottom:16px;">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>你好！收到你嘅留言，
+附上份【慢性痛症根源自我判斷清單】俾你 👇
+[附上PDF]
+
+睇完如果有問題，可以約15分鐘電話傾下。
+唔收費，唔推銷，你方便嗎？</pre>
+    </div>
+
+    <h3>模板 3：問「點收費」</h3>
+    <div class="caption-box" style="margin-bottom:16px;">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>首次評估唔收費。
+我哋傾吓你嘅情況，我分析完先同你講有咩方向，
+適唔適合你，有冇需要，你自己決定。
+完全冇壓力㗎。你而家係咩情況？</pre>
+    </div>
+
+    <h3>模板 4：問「你係咪醫生」</h3>
+    <div class="caption-box">
+      <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      <pre>唔係，我唔係醫生或治療師。
+我係痛症方案顧問——過去[X]年我接觸過幾百個痛症個案，
+了解唔同療法嘅適用情況。
+我嘅角色係幫你分析情況、搵最啱你嘅方向，
+唔係幫你治療。
+你想了解多啲嗎？</pre>
+    </div>
+  </div>
+
+  <!-- HASHTAGS -->
+  <div class="card" id="hashtags">
+    <h2>Hashtag 清單</h2>
+    <p class="subtitle">每次發帖選8-12個，唔好每次一模一樣</p>
+    <div class="grid-2">
+      <div>
+        <div class="section-label">主題類</div>
+        <span class="tag">#痛症</span><span class="tag">#痛症管理</span><span class="tag">#香港痛症</span><span class="tag">#痛症治療</span><span class="tag">#痛症顧問</span>
+        <div class="section-label" style="margin-top:12px;">症狀類</div>
+        <span class="tag">#肩頸痛</span><span class="tag">#腰背痛</span><span class="tag">#坐骨神經痛</span><span class="tag">#膝蓋痛</span><span class="tag">#五十肩</span><span class="tag">#頸椎痛</span><span class="tag">#媽媽手</span>
+        <div class="section-label" style="margin-top:12px;">療法類</div>
+        <span class="tag">#衝擊波</span><span class="tag">#物理治療</span><span class="tag">#中醫</span><span class="tag">#脊醫</span><span class="tag">#運動創傷</span>
+      </div>
+      <div>
+        <div class="section-label">生活類</div>
+        <span class="tag">#打工仔</span><span class="tag">#辦公室</span><span class="tag">#健身</span><span class="tag">#香港</span><span class="tag">#健康</span><span class="tag">#港鐵</span>
+        <div class="section-label" style="margin-top:12px;">原創系列類（v2）</div>
+        <span class="tag teal">#局內人</span><span class="tag teal">#香港人痛症地圖</span><span class="tag teal">#你係哪種</span><span class="tag teal">#Stanley痛症個案</span>
+        <div class="section-label" style="margin-top:12px;">互動類</div>
+        <span class="tag">#個案分享</span><span class="tag">#痛症知識</span><span class="tag">#痛症謬誤</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND -->
+  <div class="card" id="brand">
+    <h2>品牌規範（快速查閱）</h2>
+    <div class="grid-2">
+      <div>
+        <div class="section-label">品牌顏色</div>
+        <div style="display:flex;gap:12px;margin-bottom:16px;">
+          <div style="text-align:center;"><div style="width:60px;height:60px;background:#1B3A6B;border-radius:8px;"></div><p style="font-size:11px;margin-top:4px;">#1B3A6B<br>深藍（主色）</p></div>
+          <div style="text-align:center;"><div style="width:60px;height:60px;background:#2A9D8F;border-radius:8px;"></div><p style="font-size:11px;margin-top:4px;">#2A9D8F<br>青綠（點綴）</p></div>
+          <div style="text-align:center;"><div style="width:60px;height:60px;background:#FFFFFF;border:1px solid #ddd;border-radius:8px;"></div><p style="font-size:11px;margin-top:4px;">#FFFFFF<br>白（底色）</p></div>
+        </div>
+        <div class="section-label">字體（Canva 搜尋）</div>
+        <p style="font-size:13px;">標題：<strong>Noto Sans TC Bold</strong></p>
+        <p style="font-size:13px;margin-top:4px;">內文：<strong>Noto Sans TC Regular</strong></p>
+      </div>
+      <div>
+        <div class="section-label">署名（每張圖右下角）</div>
+        <div class="caption-box"><pre>Stanley｜痛症方案顧問</pre></div>
+        <div class="section-label" style="margin-top:12px;">圖片尺寸</div>
+        <p style="font-size:13px;">Carousel：<strong>1080 × 1080 px</strong></p>
+        <p style="font-size:13px;margin-top:4px;">Reel 封面：<strong>1080 × 1920 px</strong></p>
+        <p style="font-size:13px;margin-top:4px;">Story：<strong>1080 × 1920 px</strong></p>
+      </div>
+    </div>
+    <div class="section-label">所有 PDF 檔案</div>
+    <table>
+      <tr><th>檔案</th><th>內容</th></tr>
+      <tr><td><a href="Stanley_痛症IG_30日執行手冊_v2.pdf">📄 30日執行手冊 v2.pdf</a></td><td>最新版完整執行計劃</td></tr>
+      <tr><td><a href="Stanley_痛症IG_DreamTeam分析.pdf">📄 DreamTeam分析.pdf</a></td><td>策略分析報告</td></tr>
+      <tr><td><a href="Stanley_IG_十大文案.pdf">📄 十大文案.pdf</a></td><td>Caption 文案庫</td></tr>
+      <tr><td><a href="competitor_analysis_report.pdf">📄 競品分析.pdf</a></td><td>競品 IG 分析</td></tr>
+    </table>
+  </div>
+
+  <p style="text-align:center;color:var(--grey);font-size:11px;margin-top:20px;padding-bottom:30px;">Stanley IG 主控台 v2.0 | 2026年5月17日</p>
+</main>
+
+<script>
+function openModal(src) {
+  document.getElementById('imgModal').classList.add('show');
+  document.getElementById('modalImg').src = src;
+}
+function closeModal() {
+  document.getElementById('imgModal').classList.remove('show');
+}
+document.getElementById('imgModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function copyText(btn) {
+  const pre = btn.parentElement.querySelector('pre');
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.textContent = '已複製 ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// Active sidebar link on scroll
+const sections = document.querySelectorAll('[id]');
+const links = document.querySelectorAll('#sidebar a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) current = s.id; });
+  links.forEach(l => { l.classList.remove('active'); if (l.getAttribute('href') === '#' + current) l.classList.add('active'); });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Team Panel">
+<title>Stanley Team — Agent Command Panel</title>
+<style>
+  :root {
+    --bg: #0c0e14;
+    --card: #13161f;
+    --card2: #1a1e2e;
+    --accent: #7c6ff7;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --pink: #f472b6;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+    --text: #e8eaf6;
+    --muted: #7b7f9e;
+    --border: #252840;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    overscroll-behavior: none;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #13161f, #1a1e2e);
+    padding: 52px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 80% 30%, rgba(124,111,247,.2) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .header-inner { position: relative; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 22px; font-weight: 800; }
+  .header h1 span { color: var(--accent); }
+  .header-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── MAIN ── */
+  .main { padding: 20px 16px 120px; max-width: 600px; margin: 0 auto; }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 11px; font-weight: 800; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted);
+    margin: 24px 0 12px;
+  }
+
+  /* ── AGENT GRID ── */
+  .agent-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .agent-btn {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    -webkit-user-select: none;
+  }
+  .agent-btn:active { transform: scale(.95); }
+  .agent-btn.selected { border-color: var(--accent); background: rgba(124,111,247,.12); }
+  .agent-btn.all-btn { grid-column: span 4; padding: 10px; flex-direction: row; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .agent-btn.all-btn.selected { border-color: var(--yellow); background: rgba(251,191,36,.08); }
+  .agent-icon { font-size: 22px; display: block; margin-bottom: 5px; }
+  .agent-name { font-size: 12px; font-weight: 800; display: block; }
+  .agent-role { font-size: 10px; color: var(--muted); display: block; margin-top: 2px; line-height: 1.3; }
+  .new-tag { display: inline-block; background: rgba(52,211,153,.2); color: #34d399; font-size: 8px; font-weight: 900; padding: 1px 5px; border-radius: 6px; margin-top: 2px; }
+
+  /* ── TASK INPUT ── */
+  .task-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .task-textarea {
+    width: 100%; background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 15px; font-family: inherit;
+    padding: 16px; resize: none; min-height: 120px;
+    line-height: 1.6;
+  }
+  .task-textarea::placeholder { color: var(--muted); }
+  .task-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .urgency-btn {
+    background: var(--card2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; font-weight: 700;
+    padding: 6px 12px; border-radius: 20px; cursor: pointer;
+    transition: all .15s;
+  }
+  .urgency-btn:active { transform: scale(.95); }
+  .urgency-btn.selected-today { background: rgba(248,113,113,.15); border-color: var(--red); color: var(--red); }
+  .urgency-btn.selected-week { background: rgba(251,191,36,.15); border-color: var(--yellow); color: var(--yellow); }
+  .urgency-btn.selected-month { background: rgba(52,211,153,.15); border-color: var(--green); color: var(--green); }
+
+  /* ── GENERATE BUTTON ── */
+  .gen-btn {
+    width: 100%; margin-top: 14px;
+    background: linear-gradient(135deg, var(--accent), #9c6ff7);
+    color: #fff; border: none; border-radius: 14px;
+    font-size: 16px; font-weight: 800;
+    padding: 16px; cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    letter-spacing: .5px;
+  }
+  .gen-btn:active { transform: scale(.98); opacity: .9; }
+  .gen-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── OUTPUT ── */
+  .output-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 14px;
+    display: none;
+  }
+  .output-box.visible { display: block; }
+  .output-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px; font-weight: 800; color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+  }
+  .copy-btn {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 10px;
+    font-size: 12px; font-weight: 800;
+    padding: 6px 14px; cursor: pointer;
+    transition: all .15s;
+  }
+  .copy-btn:active { transform: scale(.95); }
+  .copy-btn.copied { background: var(--green); }
+  .output-text {
+    padding: 16px; font-size: 14px;
+    color: #a5afd6; line-height: 1.7;
+    white-space: pre-wrap; font-family: 'SF Mono', 'Courier New', monospace;
+    max-height: 280px; overflow-y: auto;
+  }
+
+  /* ── QUICK TEMPLATES ── */
+  .template-scroll {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+  .template-scroll::-webkit-scrollbar { display: none; }
+  .template-chip {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text); font-size: 12px; font-weight: 600;
+    padding: 8px 14px; border-radius: 20px; cursor: pointer;
+    white-space: nowrap; flex-shrink: 0;
+    transition: all .15s;
+  }
+  .template-chip:active { transform: scale(.95); background: var(--card2); }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(12,14,20,.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 10px 0 24px;
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 16px; }
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; color: var(--muted); font-weight: 700; }
+  .nav-item.active .nav-label { color: var(--accent); }
+
+  /* ── TEAM STATUS VIEW ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .team-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px;
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 10px;
+  }
+  .team-avatar { font-size: 28px; flex-shrink: 0; }
+  .team-info { flex: 1; }
+  .team-name { font-size: 15px; font-weight: 800; }
+  .team-role { font-size: 12px; color: var(--muted); }
+  .team-kpi { font-size: 11px; margin-top: 6px; color: var(--text); }
+  .kpi-tag { display: inline-block; background: var(--card2); border: 1px solid var(--border); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-right: 4px; }
+
+  /* ── BRIEFING VIEW ── */
+  .brief-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; margin-bottom: 12px;
+  }
+  .brief-title { font-size: 14px; font-weight: 800; margin-bottom: 10px; }
+  .brief-item { display: flex; gap: 10px; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(37,40,64,.5); }
+  .brief-item:last-child { border-bottom: none; }
+  .brief-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <h1>Stanley <span>Team</span></h1>
+      <div class="header-sub">Agent Command Panel · v2.0</div>
+    </div>
+    <div class="status-dot"></div>
+  </div>
+</div>
+
+<!-- VIEWS -->
+<div class="main">
+
+  <!-- VIEW: COMMAND -->
+  <div class="view active" id="view-command">
+
+    <div class="section-label">選擇 Agent</div>
+    <div class="agent-grid">
+      <div class="agent-btn all-btn" onclick="selectAgent('Amy', this)">
+        <span style="font-size:20px;">🎯</span>
+        <div><div class="agent-name">Amy 分配</div><div class="agent-role">唔知揾邊個？佢幫你決定</div></div>
+      </div>
+      <div class="agent-btn" onclick="selectAgent('Anna', this)">
+        <span class="agent-icon">🎨</span>
+        <span class="agent-name">Anna</span>
+        <span class="agent-role">文案<br>設計</span>
+      </div>
+      <div class="agent-btn" onclick="selectAgent('Leo', this)">
+        <span class="agent-icon">🔍</span>
+        <span class="agent-name">Leo</span>
+        <span class="agent-role">市場<br>分析</span>
+      </div>
+      <div class="agent-btn" onclick="selectAgent('Toxic', this)">
+        <span class="agent-icon">⚙️</span>
+        <span class="agent-name">Toxic</span>
+        <span class="agent-role">自動化<br>系統</span>
+      </div>
+      <div class="agent-btn" onclick="selectAgent('Small', this)">
+        <span class="agent-icon">🧠</span>
+        <span class="agent-name">Small</span>
+        <span class="agent-role">商業<br>策略</span>
+      </div>
+      <div class="agent-btn" onclick="selectAgent('Tony', this)">
+        <span class="agent-icon">🤝</span>
+        <span class="agent-name">Tony</span>
+        <span class="agent-role">客戶<br>營運</span>
+      </div>
+      <div class="agent-btn" onclick="selectAgent('Rex', this)" style="border-color:rgba(52,211,153,.3);">
+        <span class="agent-icon">📢</span>
+        <span class="agent-name">Rex</span>
+        <span class="agent-role">廣告<br>投放</span>
+        <span class="new-tag">NEW</span>
+      </div>
+      <div class="agent-btn" onclick="selectAgent('Mia', this)" style="border-color:rgba(96,165,250,.3);">
+        <span class="agent-icon">📊</span>
+        <span class="agent-name">Mia</span>
+        <span class="agent-role">數據<br>追蹤</span>
+        <span class="new-tag">NEW</span>
+      </div>
+    </div>
+
+    <div class="section-label">快速模板</div>
+    <div class="template-scroll">
+      <div class="template-chip" onclick="useTemplate('出一條痛症 IG 帖，主題係')">✍️ 痛症帖</div>
+      <div class="template-chip" onclick="useTemplate('出一條美容 IG 帖，主題係')">💄 美容帖</div>
+      <div class="template-chip" onclick="useTemplate('幫我分析競品 IG，帳號係')">🔍 競品分析</div>
+      <div class="template-chip" onclick="useTemplate('幫我出一個廣告測試方案，預算')">📢 廣告方案</div>
+      <div class="template-chip" onclick="useTemplate('幫我改善 landing page 嘅')">🖥 Landing Page</div>
+      <div class="template-chip" onclick="useTemplate('幫我出一條 Reels 腳本，主題係')">🎬 Reels 腳本</div>
+    </div>
+
+    <div class="section-label">任務內容</div>
+    <div class="task-box">
+      <textarea class="task-textarea" id="taskInput" placeholder="輸入你想做嘅任務…&#10;&#10;例如：出一條痛症 Reels，主題係腰痛3個誤解，30秒腳本"></textarea>
+      <div class="task-toolbar">
+        <span style="font-size:11px; color:var(--muted); font-weight:700;">緊急程度：</span>
+        <button class="urgency-btn" id="urg-today" onclick="selectUrgency('today')">🔴 今日</button>
+        <button class="urgency-btn" id="urg-week" onclick="selectUrgency('week')">🟡 本週</button>
+        <button class="urgency-btn" id="urg-month" onclick="selectUrgency('month')">🟢 本月</button>
+      </div>
+    </div>
+
+    <button class="gen-btn" onclick="generateTask()" id="genBtn">生成任務指令 ▶</button>
+
+    <div class="output-box" id="outputBox">
+      <div class="output-header">
+        <span>複製以下內容貼入 Claude Code</span>
+        <button class="copy-btn" id="copyBtn" onclick="copyOutput()">複製</button>
+      </div>
+      <div class="output-text" id="outputText"></div>
+    </div>
+
+  </div>
+
+  <!-- VIEW: TEAM -->
+  <div class="view" id="view-team">
+    <div class="section-label" style="margin-top:4px;">全員狀態 v2.0</div>
+
+    <div class="team-card">
+      <div class="team-avatar">🎯</div>
+      <div class="team-info">
+        <div class="team-name">Amy <span style="font-size:11px; color:var(--muted);">秘書 / 指揮</span></div>
+        <div class="team-kpi">
+          <span class="kpi-tag" style="color:#a78bfa">v2.0: 9.5/10</span>
+          <span class="kpi-tag">8-Agent 分流</span>
+          <span class="kpi-tag">授權邊界已設</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-card">
+      <div class="team-avatar">🎨</div>
+      <div class="team-info">
+        <div class="team-name">Anna <span style="font-size:11px; color:var(--muted);">文案 & 設計</span></div>
+        <div class="team-kpi">
+          <span class="kpi-tag" style="color:#fb923c">v2.0: 9.0/10</span>
+          <span class="kpi-tag">Reels腳本新增</span>
+          <span class="kpi-tag">小紅書補強</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-card">
+      <div class="team-avatar">🔍</div>
+      <div class="team-info">
+        <div class="team-name">Leo <span style="font-size:11px; color:var(--muted);">市場分析</span></div>
+        <div class="team-kpi">
+          <span class="kpi-tag" style="color:#f472b6">v2.0: 8.5/10</span>
+          <span class="kpi-tag">痛症競品監測</span>
+          <span class="kpi-tag">行業趨勢新增</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-card" style="border-color:rgba(251,191,36,.3)">
+      <div class="team-avatar">⚙️</div>
+      <div class="team-info">
+        <div class="team-name">Toxic <span style="font-size:11px; color:var(--yellow);">⚠️ 截止日在即</span></div>
+        <div class="team-kpi">
+          <span class="kpi-tag" style="color:var(--yellow)">v2.0: 8.0/10</span>
+          <span class="kpi-tag" style="color:var(--red)">WA系統 06-01</span>
+          <span class="kpi-tag" style="color:var(--red)">Apify 今日</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-card">
+      <div class="team-avatar">🧠</div>
+      <div class="team-info">
+        <div class="team-name">Small <span style="font-size:11px; color:var(--muted);">商業策略</span></div>
+        <div class="team-kpi">
+          <span class="kpi-tag" style="color:#34d399">v2.0: 9.5/10</span>
+          <span class="kpi-tag">主動盲點提示</span>
+          <span class="kpi-tag">6月 Brief 明截止</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-card">
+      <div class="team-avatar">🤝</div>
+      <div class="team-info">
+        <div class="team-name">Tony <span style="font-size:11px; color:var(--muted);">客戶營運</span></div>
+        <div class="team-kpi">
+          <span class="kpi-tag" style="color:#f472b6">v2.0: 9.0/10</span>
+          <span class="kpi-tag">痛症腳本新增</span>
+          <span class="kpi-tag">成效追蹤系統</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-card" style="border-color:rgba(52,211,153,.3)">
+      <div class="team-avatar">📢</div>
+      <div class="team-info">
+        <div class="team-name">Rex <span style="font-size:10px; background:rgba(52,211,153,.2); color:#34d399; padding:1px 6px; border-radius:6px; font-weight:900;">NEW</span></div>
+        <div class="team-role" style="font-size:12px; color:var(--muted);">廣告投放 · Meta Ads Manager</div>
+        <div class="team-kpi">
+          <span class="kpi-tag" style="color:#34d399">新入職: 7.5/10</span>
+          <span class="kpi-tag">CPL 目標 &lt;$30</span>
+          <span class="kpi-tag">首廣告 06-10</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-card" style="border-color:rgba(96,165,250,.3)">
+      <div class="team-avatar">📊</div>
+      <div class="team-info">
+        <div class="team-name">Mia <span style="font-size:10px; background:rgba(96,165,250,.2); color:#60a5fa; padding:1px 6px; border-radius:6px; font-weight:900;">NEW</span></div>
+        <div class="team-role" style="font-size:12px; color:var(--muted);">數據追蹤 · 漏斗分析</div>
+        <div class="team-kpi">
+          <span class="kpi-tag" style="color:#60a5fa">新入職: 7.5/10</span>
+          <span class="kpi-tag">追蹤系統 06-07</span>
+          <span class="kpi-tag">漏斗報告 06-15</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: BRIEF -->
+  <div class="view" id="view-brief">
+    <div class="section-label" style="margin-top:4px;">6月份策略 Brief</div>
+
+    <div class="brief-card" style="border-color:rgba(248,113,113,.3)">
+      <div class="brief-title" style="color:var(--red);">🔴 今日緊急</div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--red)"></div>
+        <div><strong>Toxic</strong> — Apify 腳本確認上線（今日截止）</div>
+      </div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--red)"></div>
+        <div><strong>Toxic</strong> — WhatsApp Business 系統（明日截止）</div>
+      </div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--red)"></div>
+        <div><strong>Small</strong> — 6月份策略 Brief 起稿（明日截止）</div>
+      </div>
+    </div>
+
+    <div class="brief-card" style="border-color:rgba(251,191,36,.3)">
+      <div class="brief-title" style="color:var(--yellow);">🟡 本週內（06-07 前）</div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--yellow)"></div>
+        <div><strong>Leo</strong> — 建立痛症競品監測清單（≥3個）</div>
+      </div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--yellow)"></div>
+        <div><strong>Rex</strong> — 設計首個美容線廣告方案</div>
+      </div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--yellow)"></div>
+        <div><strong>Anna</strong> — 出首條小紅書格式帖</div>
+      </div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--yellow)"></div>
+        <div><strong>Mia</strong> — 建立數據追蹤 Google Sheet</div>
+      </div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--yellow)"></div>
+        <div><strong>Tony</strong> — 本週五提交首份客戶洞察摘要</div>
+      </div>
+    </div>
+
+    <div class="brief-card" style="border-color:rgba(52,211,153,.3)">
+      <div class="brief-title" style="color:var(--green);">🟢 6月目標</div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--green)"></div>
+        <div>痛症 IG：100 followers / 諮詢 10份</div>
+      </div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--green)"></div>
+        <div>美容廣告：首個測試完成，CPL &lt;$30</div>
+      </div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--green)"></div>
+        <div>Mia 漏斗報告：06-15 出爐</div>
+      </div>
+      <div class="brief-item">
+        <div class="brief-dot" style="background:var(--green)"></div>
+        <div>Anna：首條 Reels 發布</div>
+      </div>
+    </div>
+
+    <div class="brief-card">
+      <div class="brief-title">下次大培訓</div>
+      <div style="font-size:28px; font-weight:900; color:var(--accent); margin: 8px 0;">2026-07-01</div>
+      <div style="font-size:13px; color:var(--muted);">評估：Rex 廣告 ROI · Mia 漏斗 · Toxic 系統穩定 · 痛症30日成果</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-command" onclick="switchView('command')">
+    <div class="nav-icon">⚡</div>
+    <div class="nav-label">任務</div>
+  </div>
+  <div class="nav-item" id="nav-team" onclick="switchView('team')">
+    <div class="nav-icon">👥</div>
+    <div class="nav-label">團隊</div>
+  </div>
+  <div class="nav-item" id="nav-brief" onclick="switchView('brief')">
+    <div class="nav-icon">📋</div>
+    <div class="nav-label">Brief</div>
+  </div>
+</div>
+
+<script>
+  let selectedAgent = '';
+  let selectedUrgency = '';
+
+  function switchView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+  }
+
+  function selectAgent(name, el) {
+    document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedAgent = name;
+  }
+
+  function selectUrgency(level) {
+    document.querySelectorAll('.urgency-btn').forEach(b => {
+      b.classList.remove('selected-today','selected-week','selected-month');
+    });
+    selectedUrgency = level;
+    const map = { today: 'selected-today', week: 'selected-week', month: 'selected-month' };
+    document.getElementById('urg-' + level).classList.add(map[level]);
+  }
+
+  function useTemplate(text) {
+    document.getElementById('taskInput').value = text;
+    document.getElementById('taskInput').focus();
+  }
+
+  function generateTask() {
+    const task = document.getElementById('taskInput').value.trim();
+    if (!task) {
+      document.getElementById('taskInput').focus();
+      return;
+    }
+
+    const agentMap = {
+      'Amy':   '【交俾】Amy 分配\n【背景】Amy 係我嘅 AI 秘書，負責把任務路由至正確嘅 Agent（Anna / Leo / Toxic / Small / Tony / Rex / Mia）',
+      'Anna':  '【交俾】Anna（廣告設計 & 文稿 Agent）\n【背景】Anna 負責 IG / FB / 小紅書文案，有機內容同廣告素材均可',
+      'Leo':   '【交俾】Leo（市場分析 Agent）\n【背景】Leo 負責競品監測、行業趨勢分析、三級 Alert 系統',
+      'Toxic': '【交俾】Toxic（自動化系統 Agent）\n【背景】Toxic 負責 WhatsApp 自動化、Meta Ads 自動規則、內容排程',
+      'Small': '【交俾】Small（商業策略 Agent）\n【背景】Small 負責整體策略方向、KPI 追蹤、主動盲點提示',
+      'Tony':  '【交俾】Tony（客戶營運 Agent）\n【背景】Tony 負責客戶跟進、upsell、每週五洞察摘要',
+      'Rex':   '【交俾】Rex（廣告投放 Agent）\n【背景】Rex 負責 Meta Ads Manager 全流程，CPL 目標 <$30 HKD',
+      'Mia':   '【交俾】Mia（數據追蹤 Agent）\n【背景】Mia 負責內部漏斗分析，每月15號漏斗診斷報告',
+    };
+
+    const urgMap = {
+      today: '🔴 今日',
+      week:  '🟡 本週內',
+      month: '🟢 本月內',
+      '':    '未指定',
+    };
+
+    const agentLine = selectedAgent ? agentMap[selectedAgent] : '【交俾】Amy 分配';
+    const urgLine = `【緊急程度】${urgMap[selectedUrgency] || urgMap['']}`;
+
+    const output = `${agentLine}\n\n【任務內容】\n${task}\n\n${urgLine}\n\n【備注】來自手機 Command Panel — 請按以上指示執行`;
+
+    document.getElementById('outputText').textContent = output;
+    document.getElementById('outputBox').classList.add('visible');
+    document.getElementById('outputBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function copyOutput() {
+    const text = document.getElementById('outputText').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 已複製';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '複製';
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(() => {
+      // fallback
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 已複製';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '複製'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+</script>
+</body>
+</html>

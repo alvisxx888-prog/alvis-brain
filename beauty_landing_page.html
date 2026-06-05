@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stanley 美容顧問｜了解膚質・搵對方向・改善狀態</title>
+  <meta name="description" content="香港美容顧問 Stanley｜免費 WhatsApp 分析護膚需求，唔推銷，直接話你知方向。面部療程、纖體塑形、男士護膚都可以問。" />
+  <meta property="og:title" content="Stanley 美容顧問｜了解膚質・搵對方向・改善狀態" />
+  <meta property="og:description" content="護膚品換咗一個又一個都係唔到位？免費 WhatsApp 諮詢，唔推銷，直接話你知方向。立即攞《適合你嘅護膚方向入門清單》。" />
+  <meta property="og:type" content="website" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy:      #3B2010;
+      --navy-dark: #261408;
+      --navy-mid:  #5C3820;
+      --rose:      #D4887A;
+      --rose-lt:   #E8A898;
+      --rose-pale: rgba(212,136,122,0.10);
+      --gold:      #C9A96E;
+      --gold-lt:   #DBBE8A;
+      --gold-pale: rgba(201,169,110,0.12);
+      --bg:        #FDF8F2;
+      --white:     #FFFFFF;
+      --td:        #2C1A0E;
+      --tm:        #6A4E3A;
+      --tl:        #A08070;
+      --r:         20px;
+      --rf:        9999px;
+      --sn:        0 8px 32px rgba(59,32,16,0.12);
+      --sr:        0 8px 28px rgba(201,169,110,0.35);
+      --gr:        0 0 40px rgba(201,169,110,0.22);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:'Noto Sans HK',sans-serif; background:var(--bg); color:var(--td); overflow-x:hidden; }
+
+    /* ══ NAVBAR ══ */
+    nav {
+      position:fixed; top:0; width:100%; z-index:300;
+      background:rgba(253,248,242,0.97); backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(201,169,110,0.35);
+      padding:10px 32px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .nl { display:flex; align-items:center; gap:12px; }
+    .nl-mark { width:46px; height:46px; border-radius:12px; overflow:hidden; flex-shrink:0; border:1.5px solid rgba(201,169,110,0.40); background:var(--bg); }
+    .nl-mark img { width:46px; height:46px; object-fit:cover; border-radius:50%; }
+    .nl-name { font-size:15px; font-weight:700; color:var(--td); line-height:1.2; }
+    .nl-sub  { font-size:11px; color:var(--tl); }
+    .nav-links { display:flex; align-items:center; gap:26px; }
+    .nav-links a { color:var(--tm); font-size:13px; font-weight:500; text-decoration:none; transition:color .2s; }
+    .nav-links a:hover { color:#A8843C; }
+    .nav-cta {
+      display:flex; align-items:center; gap:8px;
+      background:linear-gradient(135deg,#A8843C,var(--gold));
+      color:#fff; border:none; border-radius:var(--rf);
+      padding:10px 22px; font-size:13px; font-weight:700;
+      text-decoration:none; cursor:pointer; font-family:inherit;
+      transition:transform .2s,box-shadow .2s; box-shadow:var(--sr);
+    }
+    .nav-cta:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(201,169,110,.45); }
+
+    /* ══ HERO ══ */
+    .hero {
+      min-height:100vh;
+      background:linear-gradient(140deg,#F0E0BC 0%,#F8EDD4 55%,#FDF5E8 100%);
+      display:flex; align-items:center;
+      padding:110px 32px 0; position:relative; overflow:hidden;
+    }
+    .sparkle-deco {
+      position:absolute; pointer-events:none;
+      color:rgba(59,32,16,0.07); font-size:70px; font-weight:900;
+      animation:floatY 6s ease-in-out infinite;
+    }
+    .sparkle-deco:nth-child(1) { top:12%; left:5%;  animation-delay:0s; }
+    .sparkle-deco:nth-child(2) { top:60%; left:2%;  animation-delay:2s; font-size:44px; }
+    .sparkle-deco:nth-child(3) { top:20%; right:3%; animation-delay:1s; font-size:52px; }
+    .sparkle-deco:nth-child(4) { top:70%; right:5%; animation-delay:3s; font-size:36px; }
+    @keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
+
+    .beauty-hero-deco {
+      position:absolute; right:5%; top:10%;
+      width:160px; pointer-events:none; z-index:0; opacity:.13;
+    }
+    .hero-grid {
+      max-width:1100px; width:100%; margin:0 auto;
+      display:grid; grid-template-columns:1fr 430px;
+      gap:56px; align-items:center; position:relative; z-index:1;
+    }
+    .hero-badge {
+      display:inline-flex; align-items:center; gap:8px;
+      background:rgba(201,169,110,0.15); border:1px solid rgba(201,169,110,0.50);
+      border-radius:var(--rf); padding:7px 18px;
+      font-size:12px; color:#7A5E10; font-weight:700;
+      margin-bottom:22px; letter-spacing:.03em;
+    }
+    .hero-badge .pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--gold); animation:pulseDot 1.5s ease-in-out infinite; }
+    @keyframes pulseDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+    .hero-h1 { font-size:clamp(32px,4.2vw,52px); font-weight:900; color:var(--td); line-height:1.20; margin-bottom:20px; }
+    .hero-h1 .accent { color:transparent; background:linear-gradient(90deg,#A8843C,var(--gold)); -webkit-background-clip:text; background-clip:text; }
+    .hero-sub { font-size:16px; color:var(--tm); line-height:1.85; margin-bottom:32px; max-width:500px; }
+    .hero-sub strong { color:var(--td); }
+    .hero-tags { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:38px; }
+    .hero-tag { display:flex; align-items:center; gap:8px; background:rgba(59,32,16,0.05); border:1px solid rgba(59,32,16,0.12); border-radius:var(--rf); padding:7px 16px; font-size:13px; color:var(--tm); }
+    .tdot { width:6px; height:6px; border-radius:50%; background:var(--gold); }
+    .hero-ctas { display:flex; gap:14px; flex-wrap:wrap; }
+    .btn-primary {
+      display:inline-flex; align-items:center; gap:10px;
+      background:linear-gradient(135deg,#A8843C,var(--gold));
+      color:#fff; border:none; border-radius:var(--rf);
+      padding:16px 36px; font-size:16px; font-weight:700;
+      text-decoration:none; cursor:pointer; font-family:inherit;
+      transition:transform .2s,box-shadow .2s; box-shadow:var(--sr);
+    }
+    .btn-primary:hover { transform:translateY(-3px); box-shadow:0 14px 36px rgba(201,169,110,.5),var(--gr); }
+    .btn-ghost {
+      display:inline-flex; align-items:center; gap:8px;
+      background:transparent; color:var(--tm);
+      border:1.5px solid rgba(59,32,16,0.22); border-radius:var(--rf);
+      padding:14px 26px; font-size:15px; font-weight:600; text-decoration:none;
+      transition:background .2s,border-color .2s;
+    }
+    .btn-ghost:hover { background:rgba(59,32,16,0.05); border-color:rgba(59,32,16,0.40); }
+
+    /* character card */
+    .char-wrap { position:relative; padding-bottom:40px; }
+    .char-glow { position:absolute; inset:-40px; border-radius:50%; background:radial-gradient(circle,rgba(201,168,112,.18) 0%,transparent 68%); pointer-events:none; }
+    .char-card { background:transparent; border-radius:50%; overflow:hidden; position:relative; box-shadow:0 24px 60px rgba(0,0,0,0.35); border:3px solid rgba(201,168,112,0.45); }
+    .char-card img { width:100%; height:auto; display:block; border-radius:50%; }
+    .char-overlay { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(38,20,8,.90)); padding:28px 24px 20px; border-radius:0 0 50% 50%; }
+    .char-name  { font-size:22px; font-weight:900; color:#fff; }
+    .char-title { font-size:13px; color:var(--gold); font-weight:700; margin-top:3px; }
+    .char-tag   { font-size:12px; color:rgba(255,255,255,0.5); margin-top:3px; }
+    .stat-pill { position:absolute; background:#fff; border-radius:14px; padding:10px 16px; box-shadow:0 8px 28px rgba(0,0,0,0.18); display:flex; align-items:center; gap:10px; z-index:2; }
+    .sp-icon  { font-size:22px; }
+    .sp-num   { font-size:20px; font-weight:900; color:var(--navy); line-height:1; }
+    .sp-label { font-size:11px; color:var(--tm); line-height:1.3; font-weight:500; }
+    .pill-tl  { top:18px; left:-24px; }
+    .hero-wa-float {
+      position:absolute; bottom:44px; right:-18px;
+      background:#fff; border-radius:14px; padding:11px 15px;
+      box-shadow:0 8px 28px rgba(0,0,0,0.18);
+      display:flex; flex-direction:column; gap:8px;
+      z-index:3; min-width:186px;
+      border:1.5px solid rgba(37,211,102,0.20);
+    }
+    .hwa-status { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--tm); font-weight:600; }
+    .hwa-dot-g { width:7px; height:7px; border-radius:50%; background:#25D366; animation:pulseDot 1.5s ease-in-out infinite; flex-shrink:0; }
+    .hwa-main { display:flex; align-items:center; gap:10px; }
+    .hwa-ico { width:34px; height:34px; border-radius:9px; flex-shrink:0; background:#25D366; display:flex; align-items:center; justify-content:center; }
+    .hwa-ico svg { width:18px; height:18px; fill:#fff; }
+    .hwa-title-t { font-size:12px; font-weight:800; color:var(--navy); }
+    .hwa-sub-t   { font-size:10px; color:var(--tm); margin-top:1px; }
+    .hero-wave { position:absolute; bottom:0; left:0; right:0; line-height:0; pointer-events:none; }
+    .hero-wave svg { display:block; }
+
+    /* ══ SECTION BASE ══ */
+    .sec { padding:88px 32px; }
+    .si  { max-width:1060px; margin:0 auto; }
+    .lbl { display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg,#A8843C,var(--gold)); color:#fff; border-radius:var(--rf); padding:5px 16px; font-size:12px; font-weight:700; margin-bottom:14px; letter-spacing:.03em; }
+    .lbl-rose { background:linear-gradient(135deg,#A8843C,var(--gold)); }
+    .h2   { font-size:clamp(28px,3.5vw,42px); font-weight:900; color:var(--navy); line-height:1.22; margin-bottom:12px; }
+    .desc { font-size:16px; color:var(--tm); line-height:1.75; }
+    .tc   { text-align:center; }
+    .tc .desc { max-width:580px; margin:0 auto; }
+
+    /* ══ FORM ══ */
+    .form-sec { background:#fff; }
+    .form-wrap { max-width:1000px; margin:0 auto; display:grid; grid-template-columns:1fr 390px; gap:64px; align-items:center; }
+    .form-bullets { display:flex; flex-direction:column; gap:14px; margin-top:32px; }
+    .fb { display:flex; align-items:flex-start; gap:14px; padding:16px 20px; background:var(--bg); border-radius:14px; border:1px solid rgba(59,32,16,0.07); transition:transform .2s,box-shadow .2s; }
+    .fb:hover { transform:translateX(4px); box-shadow:var(--sn); }
+    .fb-icon { width:42px; height:42px; border-radius:10px; flex-shrink:0; background:linear-gradient(135deg,#A8843C,var(--gold)); display:flex; align-items:center; justify-content:center; font-size:20px; }
+    .fb-title { font-size:15px; font-weight:700; color:var(--navy); margin-bottom:4px; }
+    .fb-desc  { font-size:13px; color:var(--tm); line-height:1.5; }
+    .fcard { background:linear-gradient(150deg,#F5E8CC,#EDD8A0); border-radius:24px; padding:40px 36px; box-shadow:0 20px 60px rgba(59,32,16,.18); position:relative; overflow:hidden; border:1.5px solid rgba(201,169,110,0.40); }
+    .fcard::before { content:''; position:absolute; width:280px; height:280px; border-radius:50%; background:radial-gradient(circle,rgba(255,255,255,.30) 0%,transparent 70%); top:-80px; right:-60px; }
+    .fcard::after { content:'✦  ✦  ✦\A✦  ✦  ✦\A✦  ✦  ✦'; white-space:pre; position:absolute; bottom:20px; left:20px; font-size:20px; color:rgba(59,32,16,0.06); line-height:2.4; pointer-events:none; }
+    .ftop { background:rgba(255,255,255,0.45); border-radius:12px; padding:10px 16px; text-align:center; font-size:13px; font-weight:700; color:#7A5E10; margin-bottom:22px; position:relative; z-index:1; }
+    .fh2 { font-size:22px; font-weight:900; color:var(--td); margin-bottom:6px; position:relative; z-index:1; }
+    .fp  { font-size:13px; color:var(--tm); margin-bottom:22px; line-height:1.6; position:relative; z-index:1; }
+    .fg  { margin-bottom:13px; position:relative; z-index:1; }
+    .fg label { display:block; font-size:12px; font-weight:600; color:var(--tm); margin-bottom:6px; }
+    .fg input { width:100%; padding:13px 16px; background:rgba(255,255,255,0.65); border:1.5px solid rgba(59,32,16,0.15); border-radius:12px; font-size:15px; font-family:inherit; color:var(--td); outline:none; transition:border-color .2s,background .2s; }
+    .fg input::placeholder { color:var(--tl); }
+    .fg input:focus { border-color:#A8843C; background:rgba(255,255,255,0.85); }
+    .fsubmit { width:100%; padding:16px; background:linear-gradient(135deg,#A8843C,var(--gold)); color:#fff; border:none; border-radius:var(--rf); font-size:17px; font-weight:700; font-family:inherit; cursor:pointer; position:relative; z-index:1; margin-top:4px; transition:transform .2s,box-shadow .2s; box-shadow:var(--sr); }
+    .fsubmit:hover { transform:translateY(-2px); box-shadow:0 12px 36px rgba(201,169,110,.5); }
+    .fnote { font-size:11px; color:var(--tm); text-align:center; margin-top:12px; position:relative; z-index:1; line-height:1.6; }
+
+    /* ══ WHO ══ */
+    .who-bg { background:var(--bg); }
+    .who-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:52px; }
+    .wc { background:#fff; border-radius:var(--r); padding:28px 22px; text-align:center; border:1.5px solid rgba(59,32,16,0.07); transition:transform .25s,box-shadow .25s; cursor:default; position:relative; overflow:hidden; }
+    .wc::before { content:'✦'; position:absolute; top:-10px; right:10px; font-size:50px; font-weight:900; color:rgba(201,168,112,0.08); line-height:1; }
+    .wc:hover { transform:translateY(-7px); box-shadow:var(--sn); }
+    .wc-icon { font-size:42px; margin-bottom:14px; }
+    .wc-name { font-size:15px; font-weight:700; color:var(--navy); margin-bottom:8px; }
+    .wc-desc { font-size:13px; color:var(--tm); line-height:1.65; }
+
+    /* ══ PROBLEM ══ */
+    .prob-bg { background:#fff; }
+    .prob-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:52px; }
+    .pi { display:flex; align-items:flex-start; gap:16px; padding:22px 24px; background:var(--bg); border-radius:16px; border-left:4px solid var(--gold); transition:transform .2s,box-shadow .2s; }
+    .pi:hover { transform:translateX(5px); box-shadow:var(--sn); }
+    .pi-icon { font-size:28px; flex-shrink:0; margin-top:2px; }
+    .pi-text { font-size:15px; color:var(--td); line-height:1.7; }
+    .pi-text strong { color:var(--navy); }
+
+    /* ══ BEAUTY DIARY CARDS ══ */
+    .cases-bg { background:#FBF2E4; position:relative; overflow:hidden; }
+    .cases-bg::before { content:'✦'; position:absolute; font-size:280px; font-weight:900; color:rgba(201,168,112,0.05); top:-40px; right:-30px; line-height:1; pointer-events:none; }
+    .cases-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; margin-top:52px; }
+    .bd-card { background:#fff; border-radius:16px; overflow:hidden; border:1.5px solid rgba(59,32,16,0.10); transition:transform .25s,box-shadow .25s; box-shadow:0 4px 20px rgba(59,32,16,0.06); }
+    .bd-card:hover { transform:translateY(-6px); box-shadow:var(--sn); }
+    .bd-header { background:linear-gradient(135deg,#E8D0A0 0%,#D4B870 100%); padding:14px 20px; display:flex; justify-content:space-between; align-items:center; }
+    .bd-hinfo { flex:1; min-width:0; }
+    .bd-file-no { font-size:9px; letter-spacing:.15em; color:rgba(59,32,16,0.50); font-weight:700; text-transform:uppercase; margin-bottom:4px; }
+    .bd-title-h { font-size:15px; font-weight:800; color:var(--td); }
+    .bd-svg-ico { width:40px; height:40px; flex-shrink:0; margin-left:12px; background:rgba(255,255,255,0.50); border:1.5px solid rgba(59,32,16,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#7A5E10; }
+    .bd-svg-ico svg { width:20px; height:20px; }
+    .bd-body { padding:16px 20px 20px; }
+    .bd-tag { display:inline-flex; align-items:center; background:rgba(201,168,112,0.10); border:1px solid rgba(201,168,112,0.35); border-radius:var(--rf); padding:3px 11px; font-size:10px; font-weight:700; color:#7A5E10; margin-bottom:9px; letter-spacing:.05em; text-transform:uppercase; }
+    .bd-chief { font-size:15px; font-weight:700; color:var(--navy); line-height:1.38; margin-bottom:5px; }
+    .bd-bg-info { font-size:12px; color:var(--tl); line-height:1.5; margin-bottom:12px; padding-bottom:11px; border-bottom:1.5px dashed rgba(59,32,16,0.09); }
+    .bd-flow { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+    .bd-row { display:flex; align-items:stretch; border-radius:7px; overflow:hidden; }
+    .bd-lbl { min-width:54px; flex-shrink:0; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.3; padding:9px 4px; }
+    .bd-lbl.tried  { background:rgba(59,32,16,0.82); color:rgba(255,255,255,0.85); }
+    .bd-lbl.found  { background:var(--rose); color:#fff; }
+    .bd-lbl.improv { background:var(--gold-lt); color:var(--navy); }
+    .bd-val { flex:1; font-size:12.5px; color:var(--tm); line-height:1.55; padding:8px 12px; background:rgba(59,32,16,0.03); border:1px solid rgba(59,32,16,0.06); border-left:none; border-radius:0 6px 6px 0; }
+    .bd-arrow { padding:1px 0 1px 24px; font-size:12px; color:rgba(59,32,16,0.22); }
+    .bd-result { background:linear-gradient(135deg,rgba(201,169,110,0.09),rgba(201,169,110,0.16)); border:1px solid rgba(201,169,110,0.35); border-radius:10px; padding:11px 14px; font-size:13px; font-weight:700; color:#7A5E10; }
+
+    /* ══ STEPS ══ */
+    .steps-bg { background:linear-gradient(140deg,#F0E0BC,#F8EDD4 55%,#FBF2E0); position:relative; overflow:hidden; }
+    .steps-bg::before { content:''; position:absolute; inset:0; background-image:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(59,32,16,0.03) 40px,rgba(59,32,16,0.03) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(59,32,16,0.03) 40px,rgba(59,32,16,0.03) 41px); pointer-events:none; }
+    .steps-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:56px; position:relative; }
+    .steps-grid::before { content:''; position:absolute; top:44px; left:calc(16.7% + 10px); right:calc(16.7% + 10px); height:2px; background:linear-gradient(90deg,var(--gold),var(--gold-lt)); z-index:0; }
+    .step { text-align:center; position:relative; z-index:1; }
+    .step-circle { width:88px; height:88px; border-radius:50%; margin:0 auto 22px; background:linear-gradient(135deg,#A8843C,var(--gold)); display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:900; color:#fff; box-shadow:0 8px 28px rgba(201,169,110,.50),var(--gr); }
+    .step-title { font-size:18px; font-weight:700; color:var(--td); margin-bottom:10px; }
+    .step-desc  { font-size:14px; color:var(--tm); line-height:1.72; }
+    .steps-bg .h2   { color:var(--td); }
+    .steps-bg .desc { color:var(--tm); }
+
+    /* ══ STATS ══ */
+    .stats-bg { background:linear-gradient(135deg,#F5E8CC,#FAF0DA); position:relative; overflow:hidden; }
+    .stats-bg::before { content:'✦  ✦  ✦  ✦  ✦\A✦  ✦  ✦  ✦  ✦\A✦  ✦  ✦  ✦  ✦'; white-space:pre; position:absolute; top:0; left:0; font-size:28px; color:rgba(59,32,16,0.05); line-height:2; padding:20px; pointer-events:none; }
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; padding:8px 0; }
+    .stat-it { text-align:center; position:relative; z-index:1; }
+    .stat-num   { font-size:52px; font-weight:900; color:var(--td); line-height:1; }
+    .stat-label { font-size:14px; color:var(--tm); margin-top:6px; }
+
+    /* ══ GUIDE ══ */
+    .guide-bg { background:#fff; }
+    .guide-wrap { max-width:1040px; margin:0 auto; display:grid; grid-template-columns:1fr 380px; gap:64px; align-items:center; }
+    .guide-list { display:flex; flex-direction:column; gap:13px; margin-top:28px; margin-bottom:36px; }
+    .gi  { display:flex; align-items:flex-start; gap:12px; font-size:15px; color:var(--td); line-height:1.55; }
+    .chk { color:var(--gold); font-size:22px; flex-shrink:0; margin-top:1px; font-weight:700; }
+    .gcta { display:inline-flex; align-items:center; gap:10px; background:linear-gradient(135deg,#A8843C,var(--gold)); color:#fff; border:none; border-radius:var(--rf); padding:16px 36px; font-size:16px; font-weight:700; text-decoration:none; cursor:pointer; font-family:inherit; transition:transform .2s,box-shadow .2s; box-shadow:var(--sr); }
+    .gcta:hover { transform:translateY(-2px); box-shadow:0 14px 36px rgba(201,169,110,.5); }
+    .gpreview { background:linear-gradient(150deg,#F5E8CC,#EDD8A0); border-radius:24px; padding:32px 28px; box-shadow:0 20px 50px rgba(59,32,16,.14); position:relative; overflow:hidden; border:1.5px solid rgba(201,169,110,0.35); }
+    .gpreview::before { content:''; position:absolute; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle,rgba(255,255,255,.35) 0%,transparent 70%); top:-50px; right:-50px; }
+    .gpt  { font-size:16px; font-weight:700; color:var(--td); margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid rgba(59,32,16,0.12); position:relative; z-index:1; }
+    .gpis { display:flex; flex-direction:column; gap:10px; position:relative; z-index:1; }
+    .gpi  { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.45); border:1px solid rgba(59,32,16,0.08); border-radius:12px; padding:12px 16px; }
+    .gpn  { width:28px; height:28px; border-radius:50%; background:var(--gold); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .gpt2 { font-size:13px; color:var(--tm); line-height:1.45; }
+
+    /* ══ TESTIMONIALS ══ */
+    .testi-bg { background:#FBF2E4; }
+    .testi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; margin-top:52px; }
+    .tc2 { background:#fff; border-radius:var(--r); padding:28px; border:1.5px solid rgba(59,32,16,0.07); position:relative; transition:transform .25s,box-shadow .25s; }
+    .tc2:hover { transform:translateY(-5px); box-shadow:var(--sn); }
+    .tc2::before { content:'"'; position:absolute; top:14px; left:20px; font-size:64px; font-weight:900; color:rgba(201,168,112,0.18); line-height:1; }
+    .stars  { color:var(--gold); font-size:18px; margin-bottom:12px; padding-top:22px; }
+    .ttext  { font-size:14px; color:var(--td); line-height:1.8; margin-bottom:20px; }
+    .tauth  { display:flex; align-items:center; gap:12px; }
+    .tav    { width:44px; height:44px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,#A8843C,var(--rose)); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:16px; }
+    .tname  { font-weight:700; font-size:14px; color:var(--td); }
+    .ttag   { font-size:12px; color:var(--gold); font-weight:600; }
+
+    /* ══ FAQ ══ */
+    .faq-bg   { background:#fff; }
+    .faq-a    { display:none; }
+    .faq-i.open .faq-a { display:block; }
+    .faq-i.open .faq-q::after { content:'－'; }
+    .faq-list { max-width:740px; margin:52px auto 0; display:flex; flex-direction:column; gap:14px; }
+    .faq-i    { background:var(--bg); border-radius:16px; overflow:hidden; border:1.5px solid rgba(59,32,16,0.07); }
+    .faq-q    { padding:20px 24px; font-size:16px; font-weight:700; color:var(--navy); cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+    .faq-q::after { content:'＋'; font-size:22px; color:var(--gold); flex-shrink:0; margin-left:12px; }
+    .faq-a    { padding:0 24px 20px; font-size:14px; color:var(--tm); line-height:1.8; }
+
+    /* ══ FINAL CTA ══ */
+    .cta-bg  { background:var(--bg); text-align:center; }
+    .cta-box { background:linear-gradient(150deg,#F0E0BC,#F8EDD4 60%,#FBF2E0); border-radius:36px; padding:72px 56px; max-width:720px; margin:0 auto; box-shadow:0 24px 70px rgba(59,32,16,.15); position:relative; overflow:hidden; border:1.5px solid rgba(201,169,110,0.40); }
+    .cta-box::before { content:''; position:absolute; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,rgba(255,255,255,.45) 0%,transparent 70%); top:-120px; right:-80px; }
+    .cta-box::after  { content:'✦  ✦  ✦  ✦\A✦  ✦  ✦  ✦\A✦  ✦  ✦  ✦'; white-space:pre; position:absolute; bottom:20px; left:20px; font-size:24px; color:rgba(59,32,16,0.06); line-height:2.4; pointer-events:none; }
+    .cta-emoji { font-size:52px; margin-bottom:20px; position:relative; z-index:1; }
+    .cta-title { font-size:clamp(28px,4vw,40px); font-weight:900; color:var(--td); margin-bottom:14px; line-height:1.25; position:relative; z-index:1; }
+    .cta-title .accent { color:transparent; background:linear-gradient(90deg,#A8843C,var(--gold)); -webkit-background-clip:text; background-clip:text; }
+    .cta-desc  { font-size:16px; color:var(--tm); line-height:1.8; margin-bottom:40px; position:relative; z-index:1; }
+    .wa-btn    { display:inline-flex; align-items:center; gap:12px; background:#25D366; color:#fff; border:none; border-radius:var(--rf); padding:18px 52px; font-size:19px; font-weight:700; text-decoration:none; font-family:inherit; transition:transform .2s,box-shadow .2s; box-shadow:0 8px 28px rgba(37,211,102,.4); position:relative; z-index:1; }
+    .wa-btn:hover { transform:translateY(-3px); box-shadow:0 14px 40px rgba(37,211,102,.55); }
+    .wa-btn svg { width:26px; height:26px; fill:#fff; }
+    .cta-note  { font-size:13px; color:var(--tl); margin-top:18px; position:relative; z-index:1; }
+
+    /* ══ FOOTER ══ */
+    footer { background:#F0E0BC; color:var(--tm); text-align:center; padding:36px 24px; font-size:13px; border-top:1.5px solid rgba(201,169,110,0.35); }
+    .foot-brand { color:var(--td); font-weight:700; font-size:15px; margin-bottom:4px; }
+    .foot-tag   { color:var(--tm); margin-bottom:14px; }
+    .div { height:3px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+
+    /* ══ RESPONSIVE ══ */
+    @media(max-width:960px){
+      .hero-grid  { grid-template-columns:1fr; }
+      .char-wrap  { max-width:380px; margin:0 auto; }
+      .form-wrap  { grid-template-columns:1fr; gap:40px; }
+      .guide-wrap { grid-template-columns:1fr; gap:40px; }
+      .who-grid   { grid-template-columns:repeat(2,1fr); }
+      .cases-grid { grid-template-columns:1fr; }
+      .testi-grid { grid-template-columns:1fr; }
+      .stats-grid { grid-template-columns:repeat(2,1fr); }
+      .steps-grid { grid-template-columns:1fr; gap:32px; }
+      .steps-grid::before { display:none; }
+      .prob-grid  { grid-template-columns:1fr; }
+    }
+    @media(max-width:600px){
+      nav { padding:10px 16px; }
+      .nav-links { display:none; }
+      .hero { padding:90px 18px 0; }
+      .sec  { padding:60px 18px; }
+      .cta-box { padding:48px 28px; }
+      .pill-tl,.hero-wa-float { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAVBAR ═══ -->
+<nav>
+  <div class="nl">
+    <div class="nl-mark"><img src="beauty%20logo.jpeg" alt="Stanley Logo" /></div>
+    <div>
+      <div class="nl-name">Stanley 美容顧問</div>
+      <div class="nl-sub">了解膚質・搵對方向・改善狀態</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="#who">適合對象</a>
+    <a href="#cases">真實體驗</a>
+    <a href="#guide">免費資源</a>
+    <a href="#contact">聯絡我</a>
+  </div>
+  <a href="#form" class="nav-cta">🌸 免費攞護膚分析清單</a>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="sparkle-deco">✦</div>
+  <div class="sparkle-deco">✦</div>
+  <div class="sparkle-deco">◆</div>
+  <div class="sparkle-deco">◆</div>
+
+  <!-- Beauty circle decoration -->
+  <div class="beauty-hero-deco">
+    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="100" cy="100" r="90" stroke="rgba(201,168,112,1)" stroke-width="1"/>
+      <circle cx="100" cy="100" r="70" stroke="rgba(201,168,112,0.8)" stroke-width="1"/>
+      <circle cx="100" cy="100" r="50" stroke="rgba(201,168,112,0.6)" stroke-width="1"/>
+      <line x1="100" y1="10" x2="100" y2="190" stroke="rgba(201,168,112,0.5)" stroke-width="0.8"/>
+      <line x1="10" y1="100" x2="190" y2="100" stroke="rgba(201,168,112,0.5)" stroke-width="0.8"/>
+      <line x1="36" y1="36" x2="164" y2="164" stroke="rgba(201,168,112,0.35)" stroke-width="0.8"/>
+      <line x1="164" y1="36" x2="36" y2="164" stroke="rgba(201,168,112,0.35)" stroke-width="0.8"/>
+      <circle cx="100" cy="100" r="6" fill="rgba(201,168,112,0.6)"/>
+    </svg>
+  </div>
+
+  <div class="hero-grid">
+    <div>
+      <div class="hero-badge">
+        <div class="pulse-dot"></div>
+        🌸 香港美容顧問
+      </div>
+      <h1 class="hero-h1">
+        護膚品換咗<br/>
+        一個又一個，<br/>
+        <span class="accent">可能你一直揀錯方向。</span>
+      </h1>
+      <p class="hero-sub">
+        免費幫你分清：<strong>膚質類型、療程適配、真正根源</strong>，<br/>
+        再決定下一步。<br/>
+        我係 Stanley，親身體驗，唔推銷，<strong>直接講</strong>。
+      </p>
+      <div class="hero-tags">
+        <div class="hero-tag"><div class="tdot"></div>親身試過多種療程</div>
+        <div class="hero-tag"><div class="tdot"></div>WhatsApp 免費跟進諮詢</div>
+        <div class="hero-tag"><div class="tdot"></div>唔係美容師，係體驗者</div>
+        <div class="hero-tag"><div class="tdot"></div>唔推銷，直接講</div>
+      </div>
+      <div class="hero-ctas">
+        <a href="#form" class="btn-primary">🌸 免費攞護膚分析清單</a>
+        <a href="#cases" class="btn-ghost">睇真實體驗 →</a>
+      </div>
+    </div>
+
+    <div class="char-wrap">
+      <div class="char-glow"></div>
+      <div class="char-card">
+        <img src="beauty%20logo.jpeg" alt="Stanley 美容顧問" />
+        <div class="char-overlay">
+          <div class="char-name">Stanley</div>
+          <div class="char-title">美容顧問</div>
+          <div class="char-tag">了解膚質・搵對方向・改善狀態</div>
+        </div>
+      </div>
+      <div class="stat-pill pill-tl">
+        <div class="sp-icon">🌸</div>
+        <div>
+          <div class="sp-num">親試</div>
+          <div class="sp-label">多種療程體驗</div>
+        </div>
+      </div>
+      <div class="hero-wa-float">
+        <div class="hwa-status"><div class="hwa-dot-g"></div><span>Stanley 在線中</span></div>
+        <div class="hwa-main">
+          <div class="hwa-ico">
+            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.285 7.034L.787 23.213l4.262-1.416A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.016 0-3.898-.54-5.516-1.484l-.396-.234-4.094 1.074 1.094-3.994-.258-.41A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          </div>
+          <div>
+            <div class="hwa-title-t">免費 WhatsApp</div>
+            <div class="hwa-sub-t">護膚方向分析</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-wave">
+    <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M0,40 C240,0 480,60 720,30 C960,0 1200,50 1440,20 L1440,60 L0,60 Z" fill="#ffffff"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══ LEAD FORM ═══ -->
+<section class="sec form-sec" id="form">
+  <div class="form-wrap">
+    <div>
+      <div class="lbl">🎁 免費資源</div>
+      <h2 class="h2">《適合你嘅<br/>護膚方向入門清單》</h2>
+      <p class="desc">填低資料，即刻 WhatsApp 收到清單。唔係叫你自己診斷——係幫你理清思路，知道自己係邊種情況，再決定下一步。</p>
+      <div class="form-bullets">
+        <div class="fb">
+          <div class="fb-icon">🔍</div>
+          <div>
+            <div class="fb-title">5分鐘判斷你嘅真正膚質</div>
+            <div class="fb-desc">乾性 / 油性 / 混合 / 敏感——膚質唔同，護理方向完全不同</div>
+          </div>
+        </div>
+        <div class="fb">
+          <div class="fb-icon">💡</div>
+          <div>
+            <div class="fb-title">護膚品 vs 療程，你真正需要哪樣？</div>
+            <div class="fb-desc">點解貴價護膚品用完冇效？係唔係你根本需要療程而唔係產品</div>
+          </div>
+        </div>
+        <div class="fb">
+          <div class="fb-icon">📋</div>
+          <div>
+            <div class="fb-title">唔同療程適合邊種膚質 / 需求</div>
+            <div class="fb-desc">暗瘡、暗沉、鬆弛、紋路——根源唔同，方向唔同</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="fcard">
+      <div class="ftop">🎁 免費獲取｜填妥即刻 WhatsApp 送出</div>
+      <div class="fh2">填低資料<br/>即刻攞清單</div>
+      <p class="fp">攞完清單可預約 WhatsApp 免費跟進諮詢</p>
+      <form id="leadForm" onsubmit="submitForm(event)">
+        <div class="fg"><label>你嘅稱呼</label><input type="text" id="fname" placeholder="例：陳小姐 / Jason" required /></div>
+        <div class="fg"><label>WhatsApp 號碼</label><input type="tel" id="fphone" placeholder="例：91234567" required /></div>
+        <div class="fg"><label>主要美容煩惱（可略填）</label><input type="text" id="fpain" placeholder="例：暗瘡、暗沉、想纖體..." /></div>
+        <button type="submit" class="fsubmit">WhatsApp 免費分析護膚方向 →</button>
+      </form>
+      <p class="fnote">✅ 填妥後即刻收到清單 &nbsp;|&nbsp; 🔒 資料保密，唔會亂用</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WHO ═══ -->
+<section class="sec who-bg" id="who">
+  <div class="si">
+    <div class="tc">
+      <div class="lbl">呢頁係幫緊你嘅</div>
+      <h2 class="h2">你係其中一個嗎？</h2>
+      <p class="desc">唔同年齡、唔同背景，但有同一個困擾——搵唔到真正適合自己嘅方向</p>
+    </div>
+    <div class="who-grid">
+      <div class="wc">
+        <div class="wc-icon">💁‍♀️</div>
+        <div class="wc-name">年輕女士（18–35）</div>
+        <div class="wc-desc">暗瘡、毛孔粗大、底色不均，試咗好多產品但效果唔穩定</div>
+      </div>
+      <div class="wc">
+        <div class="wc-icon">👩</div>
+        <div class="wc-name">熟齡女士（35–55）</div>
+        <div class="wc-desc">開始擔心衰老、法令紋、皮膚鬆弛，唔想打針但唔知點處理</div>
+      </div>
+      <div class="wc">
+        <div class="wc-icon">🧖‍♂️</div>
+        <div class="wc-name">男士護膚</div>
+        <div class="wc-desc">油脂問題、毛孔、暗啞，想護膚但唔知從何入手</div>
+      </div>
+      <div class="wc">
+        <div class="wc-icon">🤱</div>
+        <div class="wc-name">媽媽 / 產後媽媽</div>
+        <div class="wc-desc">產後身形改變、皮膚狀態差，想修復但唔知邊個方案安全</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PROBLEM ═══ -->
+<section class="sec prob-bg">
+  <div class="si">
+    <div class="tc">
+      <div class="lbl">你有冇試過？</div>
+      <h2 class="h2">點解花咗好多錢，<br/>效果就係唔到位？</h2>
+      <p class="desc">方法唔係問題，係你未搵到適合自己嘅方向</p>
+    </div>
+    <div class="prob-grid">
+      <div class="pi"><div class="pi-icon">💸</div><div class="pi-text">買咗貴價護膚品但皮膚冇改善——<strong>唔係產品差，係唔適合你嘅膚質。</strong></div></div>
+      <div class="pi"><div class="pi-icon">🔄</div><div class="pi-text">做完療程靚咗，停咗又打返原形——<strong>根源問題冇解決，效果自然唔持久。</strong></div></div>
+      <div class="pi"><div class="pi-icon">📣</div><div class="pi-text">被美容院推銷買咗一大堆，用完冇感覺——<strong>銷售嘅係佢哋想賣，唔係你真正需要嘅。</strong></div></div>
+      <div class="pi"><div class="pi-icon">🔍</div><div class="pi-text">暗沉、紋路、鬆弛，唔知從哪方向著手——<strong>根源唔同，方向完全不同，唔能一概而論。</strong></div></div>
+      <div class="pi"><div class="pi-icon">⚗️</div><div class="pi-text">擔心成分、怕敏感，唔知哪些產品適合——<strong>對嘅成分係保護，錯嘅成分係傷害，要識分。</strong></div></div>
+      <div class="pi"><div class="pi-icon">⏳</div><div class="pi-text">「忍吓就過」——結果問題愈拖愈難處理，<strong>最後花更多時間同錢先解決到。</strong></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══ CASES ═══ -->
+<section class="sec cases-bg" id="cases">
+  <div class="si">
+    <div class="tc">
+      <div class="lbl">真實體驗</div>
+      <h2 class="h2">佢哋係點樣改善嘅？</h2>
+      <p class="desc">全部真實個案，匿名分享。方向對先係關鍵。</p>
+    </div>
+    <div class="cases-grid">
+
+      <!-- Case 01: Acne -->
+      <div class="bd-card">
+        <div class="bd-header">
+          <div class="bd-hinfo">
+            <div class="bd-file-no">Beauty Diary · #01</div>
+            <div class="bd-title-h">暗瘡 / 面部護理</div>
+          </div>
+          <div class="bd-svg-ico">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <circle cx="11" cy="10" r="7"/>
+              <path d="M7 14 Q11 17 15 14"/>
+              <circle cx="8.5" cy="9" r="0.9" fill="currentColor" stroke="none"/>
+              <circle cx="13.5" cy="9" r="0.9" fill="currentColor" stroke="none"/>
+              <circle cx="9" cy="6.5" r="0.7" fill="currentColor" stroke="none" opacity=".5"/>
+              <circle cx="14" cy="12" r="0.7" fill="currentColor" stroke="none" opacity=".5"/>
+              <path d="M8 20 Q11 22 14 20"/>
+            </svg>
+          </div>
+        </div>
+        <div class="bd-body">
+          <div class="bd-tag">膚質問題</div>
+          <div class="bd-chief">試咗3年護膚品，暗瘡就係唔斷尾</div>
+          <div class="bd-bg-info">26歲文職，每日化妝，壓力大，T區長期出油</div>
+          <div class="bd-flow">
+            <div class="bd-row"><div class="bd-lbl tried">試過</div><div class="bd-val">貴價護膚品、藥用面霜、去油控痘產品——全部治標</div></div>
+            <div class="bd-arrow">↓</div>
+            <div class="bd-row"><div class="bd-lbl found">發現</div><div class="bd-val">護膚步驟順序錯誤，成分相剋，反覆刺激皮膚</div></div>
+            <div class="bd-arrow">↓</div>
+            <div class="bd-row"><div class="bd-lbl improv">改善</div><div class="bd-val">重新整理護膚步驟後明顯改善</div></div>
+          </div>
+          <div class="bd-result">✅ 6週後暗瘡頻率大減，皮膚狀態穩定</div>
+        </div>
+      </div>
+
+      <!-- Case 02: Anti-aging -->
+      <div class="bd-card">
+        <div class="bd-header">
+          <div class="bd-hinfo">
+            <div class="bd-file-no">Beauty Diary · #02</div>
+            <div class="bd-title-h">熟齡緊緻 / 抗衰老</div>
+          </div>
+          <div class="bd-svg-ico">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <circle cx="11" cy="11" r="7"/>
+              <path d="M8 13 Q11 11 14 13"/>
+              <path d="M11 4 L11 1"/>
+              <path d="M9.5 2 L11 1 L12.5 2"/>
+              <path d="M6 8 Q7.5 7 9 8" stroke-width="1" opacity=".6"/>
+              <path d="M13 8 Q14.5 7 16 8" stroke-width="1" opacity=".6"/>
+            </svg>
+          </div>
+        </div>
+        <div class="bd-body">
+          <div class="bd-tag">抗衰老</div>
+          <div class="bd-chief">45歲皮膚開始鬆弛，唔想打針但唔知點算</div>
+          <div class="bd-bg-info">45歲職業女性，皮膚開始下垂，法令紋加深</div>
+          <div class="bd-flow">
+            <div class="bd-row"><div class="bd-lbl tried">試過</div><div class="bd-val">貴价精華、面膜、普通按摩——效果不持久</div></div>
+            <div class="bd-arrow">↓</div>
+            <div class="bd-row"><div class="bd-lbl found">發現</div><div class="bd-val">護膚品唔夠，需要配合針對性療程提升筋膜</div></div>
+            <div class="bd-arrow">↓</div>
+            <div class="bd-row"><div class="bd-lbl improv">改善</div><div class="bd-val">配合合適療程，收緊效果明顯</div></div>
+          </div>
+          <div class="bd-result">✅ 3個月後輪廓收緊，法令紋明顯改善</div>
+        </div>
+      </div>
+
+      <!-- Case 03: Slimming -->
+      <div class="bd-card">
+        <div class="bd-header">
+          <div class="bd-hinfo">
+            <div class="bd-file-no">Beauty Diary · #03</div>
+            <div class="bd-title-h">纖體 / 產後塑形</div>
+          </div>
+          <div class="bd-svg-ico">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <circle cx="11" cy="4" r="2.5"/>
+              <path d="M8 8 Q9 7 11 7 Q13 7 14 8 L15 13 Q15 16 13 17 L13 21"/>
+              <path d="M13 21 L9 21"/>
+              <path d="M9 21 L9 17 Q7 16 7 13 L8 8"/>
+              <path d="M8 11 Q6.5 11 6 13"/>
+              <path d="M14 11 Q15.5 11 16 13"/>
+            </svg>
+          </div>
+        </div>
+        <div class="bd-body">
+          <div class="bd-tag">纖體塑形</div>
+          <div class="bd-chief">產後肚腩試過唔少方法，做完就反彈</div>
+          <div class="bd-bg-info">32歲，生完第二胎，腹部脂肪積聚，自行運動效果差</div>
+          <div class="bd-flow">
+            <div class="bd-row"><div class="bd-lbl tried">試過</div><div class="bd-val">節食、運動、坊間纖體療程——反覆反彈</div></div>
+            <div class="bd-arrow">↓</div>
+            <div class="bd-row"><div class="bd-lbl found">發現</div><div class="bd-val">核心肌肉未修復，單靠外部療程效果唔持久</div></div>
+            <div class="bd-arrow">↓</div>
+            <div class="bd-row"><div class="bd-lbl improv">改善</div><div class="bd-val">內外結合方案，效果更穩定持久</div></div>
+          </div>
+          <div class="bd-result">✅ 4個月後腰圍明顯改善，唔再反彈</div>
+        </div>
+      </div>
+
+      <!-- Case 04: Men -->
+      <div class="bd-card">
+        <div class="bd-header">
+          <div class="bd-hinfo">
+            <div class="bd-file-no">Beauty Diary · #04</div>
+            <div class="bd-title-h">男士護膚</div>
+          </div>
+          <div class="bd-svg-ico">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <circle cx="10" cy="12" r="6"/>
+              <path d="M14.5 7.5 L19 3"/>
+              <path d="M16 3 L19 3 L19 6"/>
+            </svg>
+          </div>
+        </div>
+        <div class="bd-body">
+          <div class="bd-tag">男士護膚</div>
+          <div class="bd-chief">男士話唔需要護膚，油脂同毛孔問題搞咗幾年</div>
+          <div class="bd-bg-info">30歲男性，T區油光嚴重，毛孔粗大，從不護膚</div>
+          <div class="bd-flow">
+            <div class="bd-row"><div class="bd-lbl tried">試過</div><div class="bd-val">清水洗面、隨便用洗面乳——問題愈來愈嚴重</div></div>
+            <div class="bd-arrow">↓</div>
+            <div class="bd-row"><div class="bd-lbl found">發現</div><div class="bd-val">過度清潔令皮膚失油保護，反而分泌更多油脂</div></div>
+            <div class="bd-arrow">↓</div>
+            <div class="bd-row"><div class="bd-lbl improv">改善</div><div class="bd-val">簡單3步男士護膚程序，控油保濕</div></div>
+          </div>
+          <div class="bd-result">✅ 8週後油光明顯減少，毛孔收細</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STATS ═══ -->
+<section class="sec stats-bg">
+  <div class="si">
+    <div class="stats-grid">
+      <div class="stat-it"><div class="stat-num">多種</div><div class="stat-label">療程親身體驗</div></div>
+      <div class="stat-it"><div class="stat-num">~30分</div><div class="stat-label">平均回覆時間</div></div>
+      <div class="stat-it"><div class="stat-num">0元</div><div class="stat-label">首次諮詢費用</div></div>
+      <div class="stat-it"><div class="stat-num">100%</div><div class="stat-label">唔推銷，直接講</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STEPS ═══ -->
+<section class="sec steps-bg">
+  <div class="si">
+    <div class="tc">
+      <div class="lbl lbl-rose">流程</div>
+      <h2 class="h2">三步，搵到你嘅方向</h2>
+      <p class="desc">唔複雜，唔拖拉，直接幫你分析</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-circle">1</div>
+        <div class="step-title">填表攞清單</div>
+        <div class="step-desc">填低上面表格，即刻 WhatsApp 收到《護膚方向入門清單》</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">2</div>
+        <div class="step-title">了解自己情況</div>
+        <div class="step-desc">跟住清單了解自己嘅膚質同需求，有問題直接 WhatsApp 我問</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">3</div>
+        <div class="step-title">WhatsApp 免費跟進</div>
+        <div class="step-desc">直接 WhatsApp 我，體驗者角度幫你分析方向，唔推銷，直接講</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ GUIDE ═══ -->
+<section class="sec guide-bg" id="guide">
+  <div class="guide-wrap">
+    <div>
+      <div class="lbl">🎁 免費資源</div>
+      <h2 class="h2">《護膚方向<br/>入門清單》</h2>
+      <p class="desc">唔係叫你自己診斷——而係幫你理清思路，知道自己係邊種情況，再決定下一步。</p>
+      <div class="guide-list">
+        <div class="gi"><span class="chk">✓</span>5分鐘判斷你嘅真正膚質（乾 / 油 / 混合 / 敏感）</div>
+        <div class="gi"><span class="chk">✓</span>唔同膚質適用成分清單，避開相剋組合</div>
+        <div class="gi"><span class="chk">✓</span>護膚品 vs 療程：你真正需要哪樣？</div>
+        <div class="gi"><span class="chk">✓</span>3種最常見護膚誤區（9成人都中招）</div>
+        <div class="gi"><span class="chk">✓</span>何時需要進一步諮詢專業意見</div>
+      </div>
+      <a href="#form" class="gcta">🌸 免費攞護膚分析清單</a>
+    </div>
+    <div class="gpreview">
+      <div class="gpt">🌸 清單內容預覽</div>
+      <div class="gpis">
+        <div class="gpi"><div class="gpn">1</div><div class="gpt2">膚質判斷 Checklist（5分鐘完成）</div></div>
+        <div class="gpi"><div class="gpn">2</div><div class="gpt2">唔同膚質適用 vs 避開成分清單</div></div>
+        <div class="gpi"><div class="gpn">3</div><div class="gpt2">護膚品 vs 療程：你需要哪樣？判斷方法</div></div>
+        <div class="gpi"><div class="gpn">4</div><div class="gpt2">暗瘡 / 暗沉 / 鬆弛根源不同，方向不同</div></div>
+        <div class="gpi"><div class="gpn">5</div><div class="gpt2">3種情況係需要立刻諮詢專業（唔好拖）</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TESTIMONIALS ═══ -->
+<section class="sec testi-bg" id="testimonials">
+  <div class="si">
+    <div class="tc">
+      <div class="lbl">客戶見證</div>
+      <h2 class="h2">佢哋係咁講</h2>
+      <p class="desc">真實反饋，用結果說話</p>
+    </div>
+    <div class="testi-grid">
+      <div class="tc2">
+        <div class="stars">★★★★★</div>
+        <p class="ttext">暗瘡困擾咗三年，試過好多護膚品都係咁。問過 Stanley 之後先知道係護膚步驟同成分出問題，唔係產品本身差。跟住佢嘅建議調整後，6週內暗瘡頻率大減，皮膚終於穩定咗。最重要係佢完全唔推銷，直接話你知問題在哪。</p>
+        <div class="tauth">
+          <div class="tav">M</div>
+          <div><div class="tname">Mia C.</div><div class="ttag">暗瘡護膚 · 26歲文職</div></div>
+        </div>
+      </div>
+      <div class="tc2">
+        <div class="stars">★★★★★</div>
+        <p class="ttext">45歲皮膚開始鬆弛，朋友叫我打針我唔敢。WhatsApp 問 Stanley，佢分析咗我嘅情況，話係筋膜問題，推薦了適合嘅療程方向。做完3個月真係收緊咗，法令紋淺咗好多。係我完全估唔到可以唔打針都有效果。</p>
+        <div class="tauth">
+          <div class="tav">S</div>
+          <div><div class="tname">Sandra L.</div><div class="ttag">抗衰老 · 45歲職業女性</div></div>
+        </div>
+      </div>
+      <div class="tc2">
+        <div class="stars">★★★★★</div>
+        <p class="ttext">生完第二胎，肚腩試過好多方法都反彈。Stanley 解釋話係核心肌肉未修復，單靠外部療程係唔夠嘅，要內外結合。跟住佢嘅方向做，4個月後腰圍真係改善咗，而且唔再反彈。終於搵到一個真係有效嘅方向。</p>
+        <div class="tauth">
+          <div class="tav">K</div>
+          <div><div class="tname">Kelly W.</div><div class="ttag">產後纖體 · 32歲媽媽</div></div>
+        </div>
+      </div>
+      <div class="tc2">
+        <div class="stars">★★★★★</div>
+        <p class="ttext">男士唔護膚，結果油光問題搞咗幾年。被女朋友推去問 Stanley，先知道係過度清潔令皮膚失去保護。改變方法後8週，油光真係減咗好多，毛孔都細咗。而家護膚3步，5分鐘搞掂，唔複雜。多謝 Stanley 講得咁直接。</p>
+        <div class="tauth">
+          <div class="tav">J</div>
+          <div><div class="tname">Jason T.</div><div class="ttag">男士護膚 · 30歲</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══ FAQ ═══ -->
+<section class="sec faq-bg">
+  <div class="si">
+    <div class="tc">
+      <div class="lbl">常見問題</div>
+      <h2 class="h2">你可能想問</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-i">
+        <div class="faq-q">你係美容師定美容顧問？</div>
+        <div class="faq-a">我唔係持牌美容師——我係美容體驗分享者同顧問。我唔幫你做療程，但我親身試過多種療程同護膚方案，可以幫你分析你嘅情況、了解唔同選擇嘅利弊，再由你自己決定下一步。我嘅角色係幫你唔再亂咁試。</div>
+      </div>
+      <div class="faq-i">
+        <div class="faq-q">你推薦嘅產品或療程會唔會有佣金？</div>
+        <div class="faq-a">我會坦白話你知。如果我有合作關係，我會清楚講明。但我嘅原則係：唔會因為佣金而推薦唔適合你嘅嘢。我更重視你真正得到幫助——因為咁先會有回頭客同口碑。</div>
+      </div>
+      <div class="faq-i">
+        <div class="faq-q">免費諮詢係真係免費？會唔會俾壓力我買嘢？</div>
+        <div class="faq-a">係真係免費，無條件。WhatsApp 我講清楚你情況，我分析完直接話你知有咩方向，你自己決定下一步。完全冇壓力，唔適合嘅我唔會勉強。</div>
+      </div>
+      <div class="faq-i">
+        <div class="faq-q">我嘅情況係咪適合諮詢？</div>
+        <div class="faq-a">面部護理、護膚方向、纖體塑形、男士護膚、產後修復等一般美容相關問題都可以問。如果係醫療皮膚問題（例如濕疹嚴重、過敏反應）建議先睇皮膚科醫生。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FINAL CTA ═══ -->
+<section class="sec cta-bg" id="contact">
+  <div class="si">
+    <div class="cta-box">
+      <div class="cta-emoji">💬</div>
+      <h2 class="cta-title">唔使再<span class="accent">亂咁試</span><br/>搵到啱嘅方向先</h2>
+      <p class="cta-desc">
+        有任何美容護膚問題？<br/>
+        直接 WhatsApp 我，唔收費，唔推銷。<br/>
+        講清楚你情況，我直接話你知方向。<br/><br/>
+        <strong style="color:var(--gold-lt);">而家詢問，我會優先回覆——一般 30 分鐘內 WhatsApp 返你。</strong>
+      </p>
+      <a href="https://wa.me/85260901523?text=你好 Stanley！我想了解更多關於美容護膚方案，想攞《護膚方向入門清單》🌸" class="wa-btn" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.285 7.034L.787 23.213l4.262-1.416A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.016 0-3.898-.54-5.516-1.484l-.396-.234-4.094 1.074 1.094-3.994-.258-.41A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        WhatsApp 免費分析護膚方向
+      </a>
+      <p class="cta-note">🕐 一般30分鐘內回覆 &nbsp;|&nbsp; 📍 香港地區服務</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="foot-brand">Stanley｜美容顧問</div>
+  <div class="foot-tag">了解膚質・搵對方向・改善狀態</div>
+  <p>© 2026 Stanley 美容顧問. All rights reserved.</p>
+</footer>
+
+<script>
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click',e=>{
+      e.preventDefault();
+      const el=document.querySelector(a.getAttribute('href'));
+      if(el) el.scrollIntoView({behavior:'smooth'});
+    });
+  });
+
+  document.querySelectorAll('.faq-q').forEach(q=>{
+    q.addEventListener('click',()=>{
+      const item=q.parentElement;
+      const isOpen=item.classList.contains('open');
+      document.querySelectorAll('.faq-i').forEach(i=>i.classList.remove('open'));
+      if(!isOpen) item.classList.add('open');
+    });
+  });
+
+  const WA_NUMBER = '85260901523';
+
+  function submitForm(e){
+    e.preventDefault();
+    const name  = document.getElementById('fname').value.trim();
+    const phone = document.getElementById('fphone').value.trim();
+    const pain  = document.getElementById('fpain').value.trim();
+    const extra = pain ? `，美容煩惱：${pain}` : '';
+    const msg = encodeURIComponent(
+      `你好 Stanley！我係 ${name}（WhatsApp：${phone}）${extra}。\n想攞《護膚方向入門清單》🌸，希望你幫我分析下情況，唔使客氣。`
+    );
+    const a = document.createElement('a');
+    a.href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+</script>
+</body>
+</html>

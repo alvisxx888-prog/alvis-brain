@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COSMOPRO 美莊園 × CoCo 肌膚管理精靈</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pink-deep:    #E91E8C;
+      --pink-mid:     #F472B6;
+      --pink-light:   #FDB7D9;
+      --pink-pale:    #FFF0F7;
+      --pink-bg:      #FDE8F3;
+      --white:        #FFFFFF;
+      --text-dark:    #2D1A26;
+      --text-mid:     #6B3A56;
+      --radius-lg:    24px;
+      --radius-full:  9999px;
+      --shadow-soft:  0 8px 32px rgba(233,30,140,0.12);
+      --shadow-card:  0 4px 20px rgba(233,30,140,0.10);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans HK', sans-serif;
+      background: var(--pink-pale);
+      color: var(--text-dark);
+      overflow-x: hidden;
+    }
+
+    /* ── NAVBAR ── */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(244,114,182,0.2);
+      padding: 14px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .nav-logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--pink-deep), var(--pink-mid));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 900; font-size: 18px;
+    }
+    .nav-logo-text { font-size: 18px; font-weight: 700; color: var(--pink-deep); }
+    .nav-logo-sub  { font-size: 12px; color: var(--text-mid); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--pink-deep), #FF69B4);
+      color: white; border: none; border-radius: var(--radius-full);
+      padding: 10px 24px; font-size: 14px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(233,30,140,.35); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #FFF0F7 0%, #FDE8F3 40%, #FFD6EC 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 120px 24px 60px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(244,114,182,.25) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; bottom: -80px; left: -80px;
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(233,30,140,.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .hero-inner {
+      max-width: 960px; width: 100%;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; gap: 28px; position: relative; z-index: 1;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: white; border: 1.5px solid var(--pink-light);
+      border-radius: var(--radius-full); padding: 8px 20px;
+      font-size: 13px; color: var(--pink-deep); font-weight: 600;
+    }
+    .hero-badge span { font-size: 16px; }
+    .hero-title {
+      font-size: clamp(36px, 6vw, 60px);
+      font-weight: 900; line-height: 1.15;
+      color: var(--text-dark);
+    }
+    .hero-title .accent { color: var(--pink-deep); }
+    .hero-subtitle {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-mid); max-width: 560px; line-height: 1.7;
+    }
+    .hero-tagline {
+      font-size: clamp(18px, 3vw, 26px);
+      font-weight: 700; color: var(--pink-deep);
+      background: white; border-radius: var(--radius-full);
+      padding: 12px 32px; border: 2px solid var(--pink-light);
+      box-shadow: var(--shadow-soft);
+    }
+    .hero-cta-group { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--pink-deep), #FF69B4);
+      color: white; border: none; border-radius: var(--radius-full);
+      padding: 16px 36px; font-size: 16px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 24px rgba(233,30,140,.30);
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(233,30,140,.40); }
+    .btn-secondary {
+      background: white; color: var(--pink-deep);
+      border: 2px solid var(--pink-mid); border-radius: var(--radius-full);
+      padding: 14px 32px; font-size: 16px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      transition: transform .2s, background .2s;
+    }
+    .btn-secondary:hover { background: var(--pink-pale); transform: translateY(-3px); }
+
+    /* ── SECTION BASE ── */
+    section { padding: 80px 24px; }
+    .section-inner { max-width: 960px; margin: 0 auto; }
+    .section-label {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--pink-deep), var(--pink-mid));
+      color: white; border-radius: var(--radius-full);
+      padding: 6px 18px; font-size: 13px; font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(26px, 4vw, 38px); font-weight: 900;
+      line-height: 1.2; margin-bottom: 14px;
+    }
+    .section-desc { font-size: 16px; color: var(--text-mid); line-height: 1.7; max-width: 560px; }
+    .text-center { text-align: center; }
+    .text-center .section-desc { margin: 0 auto; }
+
+    /* ── FEATURES ── */
+    .features { background: white; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px; margin-top: 48px;
+    }
+    .feature-card {
+      background: var(--pink-pale);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px; text-align: center;
+      border: 1.5px solid rgba(244,114,182,.2);
+      transition: transform .25s, box-shadow .25s;
+    }
+    .feature-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-card); }
+    .feature-icon {
+      width: 64px; height: 64px; margin: 0 auto 16px;
+      background: linear-gradient(135deg, var(--pink-deep), var(--pink-mid));
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+    .feature-title { font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
+    .feature-desc  { font-size: 14px; color: var(--text-mid); line-height: 1.6; }
+
+    /* ── SERVICES ── */
+    .services { background: var(--pink-bg); }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+    .service-card {
+      background: white; border-radius: var(--radius-lg);
+      padding: 28px 24px; position: relative; overflow: hidden;
+      border: 1.5px solid rgba(244,114,182,.15);
+      transition: transform .25s, box-shadow .25s;
+    }
+    .service-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-card); }
+    .service-card::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--pink-deep), var(--pink-mid));
+    }
+    .service-num {
+      font-size: 40px; font-weight: 900;
+      color: var(--pink-light); margin-bottom: 12px; line-height: 1;
+    }
+    .service-name { font-size: 20px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
+    .service-desc { font-size: 14px; color: var(--text-mid); line-height: 1.6; }
+
+    /* ── TESTIMONIALS ── */
+    .testimonials { background: white; }
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px; margin-top: 48px;
+    }
+    .testimonial-card {
+      background: var(--pink-pale);
+      border-radius: var(--radius-lg); padding: 28px;
+      border: 1.5px solid rgba(244,114,182,.2);
+      position: relative;
+      transition: transform .25s, box-shadow .25s;
+    }
+    .testimonial-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); }
+    .testimonial-card::before {
+      content: '"';
+      position: absolute; top: 16px; left: 22px;
+      font-size: 60px; font-weight: 900;
+      color: var(--pink-light); line-height: 1;
+    }
+    .stars { color: #FF69B4; font-size: 18px; margin-bottom: 12px; padding-top: 20px; }
+    .testimonial-text { font-size: 15px; color: var(--text-dark); line-height: 1.7; margin-bottom: 20px; }
+    .testimonial-author { display: flex; align-items: center; gap: 12px; }
+    .author-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-deep), var(--pink-mid));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 16px;
+      flex-shrink: 0;
+    }
+    .author-name { font-weight: 700; font-size: 15px; color: var(--text-dark); }
+    .author-tag  { font-size: 12px; color: var(--pink-deep); font-weight: 500; }
+
+    /* ── STATS ── */
+    .stats { background: linear-gradient(135deg, var(--pink-deep), #FF69B4); }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 32px; padding: 20px 0;
+    }
+    .stat-item { text-align: center; }
+    .stat-num  { font-size: 48px; font-weight: 900; color: white; line-height: 1; }
+    .stat-label { font-size: 15px; color: rgba(255,255,255,.85); margin-top: 6px; }
+
+    /* ── CTA ── */
+    .cta-section {
+      background: var(--pink-bg);
+      text-align: center;
+    }
+    .cta-box {
+      background: white;
+      border-radius: 32px; padding: 56px 40px;
+      max-width: 640px; margin: 0 auto;
+      box-shadow: var(--shadow-soft);
+      border: 2px solid rgba(244,114,182,.2);
+    }
+    .cta-emoji { font-size: 48px; margin-bottom: 16px; }
+    .cta-title { font-size: clamp(24px, 4vw, 34px); font-weight: 900; margin-bottom: 12px; }
+    .cta-title .accent { color: var(--pink-deep); }
+    .cta-desc  { font-size: 16px; color: var(--text-mid); line-height: 1.7; margin-bottom: 32px; }
+    .whatsapp-btn {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: #25D366; color: white;
+      border: none; border-radius: var(--radius-full);
+      padding: 18px 44px; font-size: 18px; font-weight: 700;
+      text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 8px 24px rgba(37,211,102,.35);
+    }
+    .whatsapp-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(37,211,102,.45); }
+    .whatsapp-btn svg { width: 24px; height: 24px; fill: white; }
+    .cta-note { font-size: 13px; color: var(--text-mid); margin-top: 16px; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--text-dark);
+      color: rgba(255,255,255,.6);
+      text-align: center; padding: 32px 24px;
+      font-size: 14px;
+    }
+    footer .footer-brand { color: white; font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--pink-mid), transparent);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      nav { padding: 12px 18px; }
+      .hero { padding: 100px 18px 50px; }
+      .hero-cta-group { flex-direction: column; align-items: center; }
+      .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+      section { padding: 56px 18px; }
+      .cta-box { padding: 36px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ NAVBAR ═══════════ -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">C</div>
+    <div>
+      <div class="nav-logo-text">COSMOPRO 美莊園</div>
+      <div class="nav-logo-sub">CoCo 肌膚管理精靈</div>
+    </div>
+  </div>
+  <a href="#contact" class="nav-cta">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.285 7.034L.787 23.213l4.262-1.416A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.016 0-3.898-.54-5.516-1.484l-.396-.234-4.094 1.074 1.094-3.994-.258-.41A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+    立即 WhatsApp 查詢
+  </a>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span>✨</span> COSMOPRO 美莊園 Official
+    </div>
+    <h1 class="hero-title">
+      讓美麗<span class="accent">變得</span><br/>更簡單！
+    </h1>
+    <p class="hero-subtitle">
+      專業科技 × 貼心服務<br/>
+      由內而外，綻放自信美！<br/>
+      CoCo 陪你一起變美每一天 💕
+    </p>
+    <div class="hero-tagline">🌸 肌膚管理 · 美容護理 · 痛症舒緩</div>
+    <div class="hero-cta-group">
+      <a href="#contact" class="btn-primary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.285 7.034L.787 23.213l4.262-1.416A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.016 0-3.898-.54-5.516-1.484l-.396-.234-4.094 1.074 1.094-3.994-.258-.41A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        立即 WhatsApp 我
+      </a>
+      <a href="#services" class="btn-secondary">了解更多服務 →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FEATURES ═══════════ -->
+<section class="features" id="features">
+  <div class="section-inner">
+    <div class="text-center">
+      <div class="section-label">核心優勢</div>
+      <h2 class="section-title">為什麼選擇 CoCo？</h2>
+      <p class="section-desc">四大專業功效，幫你解決肌膚煩惱，由內而外全方位呵護</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">💧</div>
+        <div class="feature-title">水潤保濕</div>
+        <div class="feature-desc">深層補水，水嫩透亮<br/>讓肌膚重拾水潤彈力</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✨</div>
+        <div class="feature-title">提亮膚色</div>
+        <div class="feature-desc">改善暗沉，光感透亮<br/>煥發由內而外自然光澤</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌟</div>
+        <div class="feature-title">緊緻彈潤</div>
+        <div class="feature-desc">提升彈性，年輕飽滿<br/>對抗歲月，肌膚更緊緻</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <div class="feature-title">專業安全</div>
+        <div class="feature-desc">科學護膚，安心有效<br/>專業認證，安全可靠</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SERVICES ═══════════ -->
+<section class="services" id="services">
+  <div class="section-inner">
+    <div class="text-center">
+      <div class="section-label">服務項目</div>
+      <h2 class="section-title">專業服務一覽</h2>
+      <p class="section-desc">由肌膚檢測到專業護理，全程貼心陪伴</p>
+    </div>
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-num">01</div>
+        <div class="service-name">🔍 肌膚檢測</div>
+        <div class="service-desc">專業肌膚分析，了解你嘅肌膚狀況，制訂個人護膚方案</div>
+      </div>
+      <div class="service-card">
+        <div class="service-num">02</div>
+        <div class="service-name">💦 水潤透亮</div>
+        <div class="service-desc">深層補水療程，令肌膚重拾水潤光澤，告別乾燥暗沉</div>
+      </div>
+      <div class="service-card">
+        <div class="service-num">03</div>
+        <div class="service-name">💆 專業護理</div>
+        <div class="service-desc">針對個人需求提供專業美容及痛症管理服務，效果顯著</div>
+      </div>
+      <div class="service-card">
+        <div class="service-num">04</div>
+        <div class="service-name">💕 貼心服務</div>
+        <div class="service-desc">全程跟進，售後服務到位，讓你安心享受每次護理</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ STATS ═══════════ -->
+<section class="stats">
+  <div class="section-inner">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-num">500+</div>
+        <div class="stat-label">滿意客戶</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">98%</div>
+        <div class="stat-label">客戶滿意度</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">5年+</div>
+        <div class="stat-label">專業經驗</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">24/7</div>
+        <div class="stat-label">客戶支援</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ TESTIMONIALS ═══════════ -->
+<section class="testimonials" id="testimonials">
+  <div class="section-inner">
+    <div class="text-center">
+      <div class="section-label">客戶見證</div>
+      <h2 class="section-title">她們都說好 💕</h2>
+      <p class="section-desc">真實客戶反饋，用效果說話</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">用咗三個月，皮膚真係靚咗好多！暗沉問題改善咗，朋友仲以為我去咗做 facial！強烈推薦，效果真係有目共睹！</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">C</div>
+          <div>
+            <div class="author-name">Chloe W.</div>
+            <div class="author-tag">護膚療程客戶 · 28歲</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">肩頸痛困擾咗我好耐，試過好多方法都唔得。用咗 Stanley 介紹嘅療程之後，真係舒服咗好多，而家返工都唔使成日貼膏藥！</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">M</div>
+          <div>
+            <div class="author-name">Mandy L.</div>
+            <div class="author-tag">痛症管理客戶 · 35歲</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">一直對美容產品唔放心，但 Stanley 好專業咁解釋每樣嘢，服務態度非常好。用完之後皮膚真係嫩滑好多，會繼續支持！</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">V</div>
+          <div>
+            <div class="author-name">Vivian K.</div>
+            <div class="author-tag">護膚療程客戶 · 42歲</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ CTA / CONTACT ═══════════ -->
+<section class="cta-section" id="contact">
+  <div class="section-inner">
+    <div class="cta-box">
+      <div class="cta-emoji">💬</div>
+      <h2 class="cta-title">即刻開始你嘅<br/><span class="accent">美麗之旅</span></h2>
+      <p class="cta-desc">
+        有任何美容或痛症管理問題？<br/>
+        唔使客氣，WhatsApp 我，<br/>
+        免費諮詢，話咁快搞掂！
+      </p>
+      <!-- ⚠️ 請將下面 YOUR_WHATSAPP_NUMBER 換成你的真實 WhatsApp 號碼（例如 85291234567） -->
+      <a href="https://wa.me/YOUR_WHATSAPP_NUMBER?text=你好！我想了解更多關於 COSMOPRO 美莊園嘅服務 🌸" class="whatsapp-btn" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.285 7.034L.787 23.213l4.262-1.416A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.016 0-3.898-.54-5.516-1.484l-.396-.234-4.094 1.074 1.094-3.994-.258-.41A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        WhatsApp 免費諮詢
+      </a>
+      <p class="cta-note">🕐 一般回覆時間：30分鐘內 &nbsp;|&nbsp; 📍 香港地區服務</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <div class="footer-brand">COSMOPRO 美莊園 × CoCo 肌膚管理精靈</div>
+  <p>專業科技 × 貼心服務 · 讓美麗變得更簡單！</p>
+  <p style="margin-top:8px;">© 2025 COSMOPRO 美莊園. All rights reserved.</p>
+</footer>
+
+<!-- smooth scroll -->
+<script>
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const el = document.querySelector(a.getAttribute('href'));
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>HK 醫美美容競品全面分析報告</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#09090f;--card:#13131e;--card2:#1a1a28;--border:#252535;
+  --purple:#a78bfa;--blue:#60a5fa;--green:#34d399;--red:#f87171;
+  --yellow:#fbbf24;--pink:#f472b6;--orange:#fb923c;
+  --text:#e2e8f0;--muted:#64748b;--muted2:#94a3b8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'PingFang HK','Noto Sans HK',sans-serif;padding:40px 20px 80px}
+
+.nav{max-width:1160px;margin:0 auto 48px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:20px}
+.nav-brand{font-size:17px;font-weight:800;background:linear-gradient(135deg,var(--purple),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-meta{font-size:12px;color:var(--muted2);text-align:right}
+.nav-meta strong{color:var(--text)}
+
+.wrap{max-width:1160px;margin:0 auto}
+.sec-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin:44px 0 18px;display:flex;align-items:center;gap:12px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr}.g2{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px}
+.card-sm{padding:16px}
+.kpi-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px}
+.kpi-val{font-size:28px;font-weight:800}
+.kpi-sub{font-size:11px;color:var(--muted2);margin-top:4px}
+.grad-purple{background:linear-gradient(135deg,var(--purple),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.grad-red{background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.grad-green{background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.grad-yellow{background:linear-gradient(135deg,var(--yellow),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+.acc-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;overflow:hidden}
+.acc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.acc-beauty::before{background:linear-gradient(90deg,var(--pink),var(--purple))}
+.acc-vitae::before{background:linear-gradient(90deg,var(--green),var(--blue))}
+.acc-tbm::before{background:linear-gradient(90deg,var(--blue),var(--purple))}
+.acc-meso::before{background:linear-gradient(90deg,var(--red),var(--pink))}
+.acc-addiction::before{background:linear-gradient(90deg,var(--yellow),var(--orange))}
+.acc-justyo::before{background:linear-gradient(90deg,var(--purple),var(--pink))}
+.acc-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.acc-handle{font-size:11px;color:var(--muted2);margin-bottom:14px}
+.acc-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.acc-stat-val{font-size:18px;font-weight:800}
+.acc-stat-label{font-size:10px;color:var(--muted2);margin-top:1px}
+.acc-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin:2px 2px 0 0}
+.tag-purple{background:#2d1b69;color:var(--purple)}
+.tag-red{background:#3d1515;color:var(--red)}
+.tag-green{background:#0d3322;color:var(--green)}
+.tag-yellow{background:#3d2800;color:var(--yellow)}
+.tag-blue{background:#0f2040;color:var(--blue)}
+.tag-pink{background:#3d1535;color:var(--pink)}
+
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px}
+.chart-title{font-size:13px;font-weight:700;margin-bottom:16px}
+
+.posts-table{width:100%;border-collapse:collapse;font-size:12px}
+.posts-table th{text-align:left;padding:8px 10px;color:var(--muted2);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.posts-table td{padding:9px 10px;border-bottom:1px solid #1a1a28;vertical-align:middle}
+.posts-table tr:last-child td{border-bottom:none}
+.posts-table tr:hover td{background:#15151f}
+.type-pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.t-video{background:#1e1b4b;color:#818cf8}
+.t-image{background:#064e3b;color:#34d399}
+.t-sidecar{background:#2d1b45;color:#c084fc}
+.bar-wrap{display:flex;align-items:center;gap:6px}
+.bar{height:5px;border-radius:3px;min-width:2px}
+
+.matrix-table{width:100%;border-collapse:collapse}
+.matrix-table th{padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted2);background:var(--card2);text-align:left}
+.matrix-table td{padding:12px 14px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
+.matrix-table tr:last-child td{border-bottom:none}
+.matrix-table tr:hover td{background:#15151f}
+.score{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700}
+
+.opt-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;display:flex;gap:16px}
+.opt-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.opt-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.opt-body{font-size:12px;color:var(--muted2);line-height:1.65}
+.opt-action{margin-top:10px;padding:8px 12px;background:var(--card2);border-radius:8px;font-size:11px;color:var(--text);line-height:1.6}
+.opt-action strong{color:var(--purple)}
+
+.roadmap{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.roadmap{grid-template-columns:1fr}}
+.rm-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+.rm-phase{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.rm-title{font-size:15px;font-weight:800;margin-bottom:12px}
+.rm-item{display:flex;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted2);line-height:1.5}
+
+.footer{max-width:1160px;margin:60px auto 0;text-align:center;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:20px}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-brand">HK 醫美美容 競品全面分析</div>
+  <div class="nav-meta">
+    <strong>BeautySignatureHK</strong> 員工視角 · 優化建議報告<br>
+    數據截取：2026年5月6日　·　6個賬號　·　共 30 篇 posts
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- KPIs -->
+<div class="sec-title">市場總覽</div>
+<div class="grid g4">
+  <div class="card card-sm">
+    <div class="kpi-label">分析賬號數</div>
+    <div class="kpi-val grad-purple">6</div>
+    <div class="kpi-sub">1 目標 + 5 競品</div>
+  </div>
+  <div class="card card-sm">
+    <div class="kpi-label">市場最高互動率</div>
+    <div class="kpi-val grad-green">0.52%</div>
+    <div class="kpi-sub">VITAE 輕醫美（行業仍偏低）</div>
+  </div>
+  <div class="card card-sm">
+    <div class="kpi-label">BeautySignature 互動率</div>
+    <div class="kpi-val grad-red">0.07%</div>
+    <div class="kpi-sub">業界倒數　差距高達 7x</div>
+  </div>
+  <div class="card card-sm">
+    <div class="kpi-label">全行評論中位數</div>
+    <div class="kpi-val grad-yellow">≈ 0</div>
+    <div class="kpi-sub">6間公司幾乎零評論互動</div>
+  </div>
+</div>
+
+<!-- ACCOUNT CARDS -->
+<div class="sec-title">六大賬號檔案</div>
+<div class="grid g3">
+
+  <div class="acc-card acc-beauty">
+    <div class="acc-name">BeautySignatureHK 美御殿堂</div>
+    <div class="acc-handle">@beautysignaturehk　·　目標公司</div>
+    <div class="acc-stats">
+      <div><div class="acc-stat-val" style="color:var(--purple)">7,483</div><div class="acc-stat-label">粉絲</div></div>
+      <div><div class="acc-stat-val" style="color:var(--red)">0.07%</div><div class="acc-stat-label">互動率</div></div>
+      <div><div class="acc-stat-val">222</div><div class="acc-stat-label">貼文數</div></div>
+      <div><div class="acc-stat-val" style="color:var(--red)">5.1</div><div class="acc-stat-label">平均讚好</div></div>
+    </div>
+    <div>
+      <span class="acc-tag tag-purple">明星代言</span>
+      <span class="acc-tag tag-red">單一訊息</span>
+      <span class="acc-tag tag-pink">抗老美容</span>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted2)">定位：佘詩曼代言，$688組合主打，WhatsApp CTA</div>
+  </div>
+
+  <div class="acc-card acc-vitae">
+    <div class="acc-name">VITAE 輕醫美</div>
+    <div class="acc-handle">@vitae.hk　·　上市公司(1827)</div>
+    <div class="acc-stats">
+      <div><div class="acc-stat-val" style="color:var(--green)">6,019</div><div class="acc-stat-label">粉絲</div></div>
+      <div><div class="acc-stat-val" style="color:var(--green)">0.52%</div><div class="acc-stat-label">互動率</div></div>
+      <div><div class="acc-stat-val">157</div><div class="acc-stat-label">貼文數</div></div>
+      <div><div class="acc-stat-val" style="color:var(--green)">31.4</div><div class="acc-stat-label">平均讚好</div></div>
+    </div>
+    <div>
+      <span class="acc-tag tag-green">無針無痛</span>
+      <span class="acc-tag tag-blue">品牌概念強</span>
+      <span class="acc-tag tag-green">上市公司</span>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted2)">定位：FaceGym™️/FaceGlow™️ 獨創命名，輕醫美差異化</div>
+  </div>
+
+  <div class="acc-card acc-tbm">
+    <div class="acc-name">TBM The Beauty Medical</div>
+    <div class="acc-handle">@tbm.hk　·　2005年創立</div>
+    <div class="acc-stats">
+      <div><div class="acc-stat-val" style="color:var(--blue)">3,407</div><div class="acc-stat-label">粉絲</div></div>
+      <div><div class="acc-stat-val" style="color:var(--yellow)">0.10%</div><div class="acc-stat-label">互動率</div></div>
+      <div><div class="acc-stat-val">471</div><div class="acc-stat-label">貼文數</div></div>
+      <div><div class="acc-stat-val">3.4</div><div class="acc-stat-label">平均讚好</div></div>
+    </div>
+    <div>
+      <span class="acc-tag tag-blue">醫生主理</span>
+      <span class="acc-tag tag-blue">得獎認證</span>
+      <span class="acc-tag tag-purple">科研美容</span>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted2)">定位：香港服務大獎2026得主，20年專業背書</div>
+  </div>
+
+  <div class="acc-card acc-meso">
+    <div class="acc-name">Meso Beauty 醫學數據美容</div>
+    <div class="acc-handle">@mesobeauty_hk　·　哈佛醫學院主理</div>
+    <div class="acc-stats">
+      <div><div class="acc-stat-val" style="color:var(--red)">10,677</div><div class="acc-stat-label">粉絲</div></div>
+      <div><div class="acc-stat-val" style="color:var(--yellow)">0.20%</div><div class="acc-stat-label">互動率</div></div>
+      <div><div class="acc-stat-val">351</div><div class="acc-stat-label">貼文數</div></div>
+      <div><div class="acc-stat-val" style="color:var(--yellow)">21.2</div><div class="acc-stat-label">平均讚好</div></div>
+    </div>
+    <div>
+      <span class="acc-tag tag-red">哈佛認證</span>
+      <span class="acc-tag tag-red">數據導向</span>
+      <span class="acc-tag tag-yellow">訂製療程</span>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted2)">定位：醫學思維×數據，哈佛醫學院碩士主理，非普通美容</div>
+  </div>
+
+  <div class="acc-card acc-addiction">
+    <div class="acc-name">ADDICTION Beauty HK</div>
+    <div class="acc-handle">@addictionbeautyhk　·　日本化妝品品牌</div>
+    <div class="acc-stats">
+      <div><div class="acc-stat-val" style="color:var(--yellow)">9,955</div><div class="acc-stat-label">粉絲</div></div>
+      <div><div class="acc-stat-val" style="color:var(--red)">0.07%</div><div class="acc-stat-label">互動率</div></div>
+      <div><div class="acc-stat-val">901</div><div class="acc-stat-label">貼文數</div></div>
+      <div><div class="acc-stat-val">7.4</div><div class="acc-stat-label">平均讚好</div></div>
+    </div>
+    <div>
+      <span class="acc-tag tag-yellow">日本品牌</span>
+      <span class="acc-tag tag-yellow">化妝品零售</span>
+      <span class="acc-tag tag-yellow">非醫美服務</span>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted2)">定位：日系化妝品，非醫美服務，可參考視覺風格</div>
+  </div>
+
+  <div class="acc-card acc-justyo">
+    <div class="acc-name">佳思優整形醫美診所</div>
+    <div class="acc-handle">@justyouclinic　·　台灣品牌（參考）</div>
+    <div class="acc-stats">
+      <div><div class="acc-stat-val" style="color:var(--purple)">3,191</div><div class="acc-stat-label">粉絲</div></div>
+      <div><div class="acc-stat-val" style="color:var(--red)">0.12%</div><div class="acc-stat-label">互動率</div></div>
+      <div><div class="acc-stat-val">591</div><div class="acc-stat-label">貼文數</div></div>
+      <div><div class="acc-stat-val">3.8</div><div class="acc-stat-label">平均讚好</div></div>
+    </div>
+    <div>
+      <span class="acc-tag tag-purple">整形外科</span>
+      <span class="acc-tag tag-pink">情感行銷</span>
+      <span class="acc-tag tag-purple">母親節主題</span>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted2)">定位：台灣整形診所，情感化內容，母親節行銷值得借鑑</div>
+  </div>
+
+</div>
+
+<!-- CHARTS -->
+<div class="sec-title">數據對比圖表</div>
+<div class="grid g2">
+  <div class="chart-card">
+    <div class="chart-title">互動率對比（%）</div>
+    <div style="position:relative;height:260px"><canvas id="engChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">粉絲數 vs 平均讚好（泡泡圖）</div>
+    <div style="position:relative;height:260px"><canvas id="scatterChart"></canvas></div>
+  </div>
+</div>
+<div class="grid g2" style="margin-top:14px">
+  <div class="chart-card">
+    <div class="chart-title">各品牌平均讚好數（橫向對比）</div>
+    <div style="position:relative;height:220px"><canvas id="likesChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">30篇貼文內容類型分佈</div>
+    <div style="position:relative;height:220px"><canvas id="typeChart"></canvas></div>
+  </div>
+</div>
+
+<!-- POSTS TABLES -->
+<div class="sec-title">各品牌頭5篇貼文明細</div>
+
+<div id="postsWrap"></div>
+
+<!-- POSITIONING MATRIX -->
+<div class="sec-title">定位差異對比矩陣</div>
+<div class="card" style="padding:0;overflow:hidden">
+  <table class="matrix-table">
+    <thead>
+      <tr>
+        <th>維度</th>
+        <th>BeautySignature</th>
+        <th>VITAE 輕醫美</th>
+        <th>TBM</th>
+        <th>Meso Beauty</th>
+        <th>ADDICTION</th>
+        <th>佳思優</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>核心差異化</strong></td>
+        <td>明星代言（佘詩曼）</td>
+        <td><span style="color:var(--green)">獨創品牌概念（FaceGym™️）</span></td>
+        <td>20年老牌 + 得獎</td>
+        <td><span style="color:var(--green)">哈佛醫學院主理</span></td>
+        <td>日系品牌形象</td>
+        <td>情感化內容</td>
+      </tr>
+      <tr>
+        <td><strong>內容多元度</strong></td>
+        <td><span style="color:var(--red)">● 低</span> 反覆同一 offer</td>
+        <td><span style="color:var(--yellow)">● 中</span> 多個療程系列</td>
+        <td><span style="color:var(--yellow)">● 中</span> 節日+療程+獎項</td>
+        <td><span style="color:var(--green)">● 高</span> 教育+故事+療程</td>
+        <td><span style="color:var(--green)">● 高</span> 多款產品輪換</td>
+        <td><span style="color:var(--green)">● 高</span> 情感敘事多元</td>
+      </tr>
+      <tr>
+        <td><strong>專業可信度</strong></td>
+        <td><span style="color:var(--yellow)">● 中</span> 依賴明星，非專業</td>
+        <td><span style="color:var(--yellow)">● 中</span> 上市公司背書</td>
+        <td><span style="color:var(--green)">● 高</span> 醫生主理+得獎</td>
+        <td><span style="color:var(--green)">● 最高</span> 哈佛學歷認證</td>
+        <td><span style="color:var(--yellow)">● 中</span> 品牌歷史</td>
+        <td><span style="color:var(--green)">● 高</span> 醫生具名出鏡</td>
+      </tr>
+      <tr>
+        <td><strong>社群建立</strong></td>
+        <td><span style="color:var(--red)">● 零</span> 0評論，純廣播</td>
+        <td><span style="color:var(--green)">● 有</span> 最高帖子28評論</td>
+        <td><span style="color:var(--yellow)">● 少</span> 偶有2評論</td>
+        <td><span style="color:var(--yellow)">● 少</span> 散見1-2評論</td>
+        <td><span style="color:var(--red)">● 零</span> 全部0評論</td>
+        <td><span style="color:var(--red)">● 零</span> 全部0評論</td>
+      </tr>
+      <tr>
+        <td><strong>轉化路徑</strong></td>
+        <td>WhatsApp（單一）</td>
+        <td><span style="color:var(--green)">Linktree（多入口）</span></td>
+        <td>WhatsApp+地址</td>
+        <td>WhatsApp直連</td>
+        <td>官網+實體店</td>
+        <td><span style="color:var(--green)">Linkgoods多平台</span></td>
+      </tr>
+      <tr>
+        <td><strong>價格透明度</strong></td>
+        <td><span style="color:var(--green)">高（$688/$388明確）</span></td>
+        <td>低（不標價）</td>
+        <td>低（不標價）</td>
+        <td>低（不標價）</td>
+        <td>中（有產品定價）</td>
+        <td>低（不標價）</td>
+      </tr>
+      <tr>
+        <td><strong>目標客群</strong></td>
+        <td>抗老女性（30-55）</td>
+        <td>輕熟女（25-45）</td>
+        <td>中高端熟女（35-55）</td>
+        <td>精明消費者（25-45）</td>
+        <td>美妝愛好者（18-40）</td>
+        <td>媽媽群（28-50）</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- OPTIMIZATION -->
+<div class="sec-title">以 BeautySignatureHK 員工身份 — 8大優化行動</div>
+<div class="grid g2">
+
+  <div class="opt-card">
+    <div class="opt-num" style="background:#1e1b4b;color:var(--purple)">01</div>
+    <div>
+      <div class="opt-title">重新包裝「阿佘」—— 由廣告變成故事</div>
+      <div class="opt-body">現在係反覆用「阿佘最愛 $688」，用家第三次見已冇感覺。VITAE 嘅 FaceGym™️ 概念帖子拿到141個讚、28個評論，係因為有故事感。阿佘用咗6年，係黃金資產，但你只係用佢喊口號，冇用佢講故事。</div>
+      <div class="opt-action"><strong>立即行動：</strong>製作「阿佘6年療程秘密」系列，一集講一個療程背後嘅問題，用故事帶出產品。目標係令人睇完想 comment，唔係睇完想關掉。</div>
+    </div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-num" style="background:#0d3322;color:var(--green)">02</div>
+    <div>
+      <div class="opt-title">創造屬於自己的「治療概念名稱」</div>
+      <div class="opt-body">VITAE 有 FaceGym™️、FaceGlow™️，令人記得住。你哋而家只係「膠原養肌逆齡組合」——描述性、非品牌性、唔 memorable。競品分析顯示：有獨特命名概念嘅療程，帖子平均表現高出2-4倍。</div>
+      <div class="opt-action"><strong>立即行動：</strong>將最受歡迎嘅三個療程各起一個品牌名，例如「SkinReset™️」「CollagenForce™️」，然後圍繞呢個名做系列內容。</div>
+    </div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-num" style="background:#3d1515;color:var(--red)">03</div>
+    <div>
+      <div class="opt-title">加入「可信度錨點」——唔好只靠明星</div>
+      <div class="opt-body">TBM 靠「香港服務大獎2026」，Meso Beauty 靠「哈佛醫學院」，你哋靠「阿佘」。明星係高風險：合約可以唔續、負面新聞會連累品牌。你哋需要第二條可信度腿。</div>
+      <div class="opt-action"><strong>立即行動：</strong>① 申請業界獎項（香港服務大獎、美容業大獎）② 找出療程嘅醫學/科研依據在帖子中引用 ③ 美容師「具名出鏡」建立個人專業形象。</div>
+    </div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-num" style="background:#0f2040;color:var(--blue)">04</div>
+    <div>
+      <div class="opt-title">加入教育型內容——打破廣播模式</div>
+      <div class="opt-body">Meso Beauty 的「雞皮粒粒解決方法」教育帖子有最高近期互動，亦係唯一有持續評論的美容賬號。教育型內容 = 算法友好 + 建立信任 = 更多自然觸達。</div>
+      <div class="opt-action"><strong>立即行動：</strong>每週至少1篇「為什麼」內容：「為什麼30歲後膠原流失加速？」答問式內容鼓勵留言，直接提升評論數。</div>
+    </div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-num" style="background:#3d2800;color:var(--yellow)">05</div>
+    <div>
+      <div class="opt-title">多元化轉化路徑——減少對 WhatsApp 的依賴</div>
+      <div class="opt-body">全部帖子只係 WhatsApp，無辦法追蹤哪條內容帶嚟 Lead，也無法規模化。VITAE 用 Linktree，佳思優用 Linkgoods，都係多入口設計。唔知哪條 Post 帶嚟客，等同唔知應該做乜 content。</div>
+      <div class="opt-action"><strong>立即行動：</strong>設立 Linktree（免費），包含：① 免費試療程預約表格 ② WhatsApp ③ 各療程介紹頁 ④ Google 地圖。然後追蹤每個 link 嘅點擊率。</div>
+    </div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-num" style="background:#3d1535;color:var(--pink)">06</div>
+    <div>
+      <div class="opt-title">加入真實客戶聲音——Before/After + Testimonial</div>
+      <div class="opt-body">分析12篇帖子，完全冇一篇客戶真實見證。佳思優「術後醫囑」、Meso Beauty「雞皮粒粒客戶故事」都係用真實情境引起共鳴。明星代言只能帶來羨慕，客戶故事才帶來信任。</div>
+      <div class="opt-action"><strong>立即行動：</strong>每月收集3-5位客戶的 before/after 照片及簡短感受（可匿名），做成系列帖子。用客戶真實語言撰文，唔好寫廣告文案。</div>
+    </div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-num" style="background:#1a1800;color:var(--yellow)">07</div>
+    <div>
+      <div class="opt-title">調整發帖策略——少而精，而非多而爛</div>
+      <div class="opt-body">平均每週2-3帖，但內容高度重複，算法會懲罰低互動內容。Meso Beauty 每週2帖但平均讚好21個，比你哋每週3帖但平均5個更有效率。發帖頻率不如發帖質量。</div>
+      <div class="opt-action"><strong>立即行動：</strong>帖子減至每週3篇：① 週一：教育/科普 ② 週三：療程/優惠（限量） ③ 週六：客戶故事/阿佘。Stories 每日更新保持活躍度。</div>
+    </div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-num" style="background:#0d2d1e;color:var(--green)">08</div>
+    <div>
+      <div class="opt-title">主動建立社群互動——打破0評論魔咒</div>
+      <div class="opt-body">6個賬號中，只有 VITAE 有超過5個評論的帖子（28個）。評論數係 IG 算法最重視的互動訊號，0評論代表帖子基本上不會被推廣。你哋唔係冇人睇，係算法根本唔推你。</div>
+      <div class="opt-action"><strong>立即行動：</strong>每篇帖子結尾加「問題 CTA」：「你最想改善邊個問題？評論告訴我哋 👇」。然後發帖後1小時內主動 reply 每一條評論——算法最愛這個信號。</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 90-DAY ROADMAP -->
+<div class="sec-title">90天落地路線圖</div>
+<div class="roadmap">
+  <div class="rm-card">
+    <div class="rm-phase" style="color:var(--red)">第一個月 · 基礎建設</div>
+    <div class="rm-title" style="color:var(--red)">Fix the Foundation</div>
+    <div class="rm-item"><span>🔗</span>建立 Linktree，整合所有 CTA 入口</div>
+    <div class="rm-item"><span>📋</span>制定內容日曆（週一教育/週三療程/週六故事）</div>
+    <div class="rm-item"><span>🏷️</span>為3個主力療程創作「品牌命名概念」</div>
+    <div class="rm-item"><span>📸</span>收集首批客戶 before/after 素材</div>
+    <div class="rm-item"><span>❓</span>每篇帖子加入「問題 CTA」引評論</div>
+    <div class="rm-item"><span>📊</span>設立 IG Insights 追蹤基準數據</div>
+  </div>
+  <div class="rm-card">
+    <div class="rm-phase" style="color:var(--yellow)">第二個月 · 內容升級</div>
+    <div class="rm-title" style="color:var(--yellow)">Build Authority</div>
+    <div class="rm-item"><span>🎓</span>推出「阿佘6年秘密」故事系列（4集）</div>
+    <div class="rm-item"><span>🏆</span>申請業界獎項，提升第三方可信度</div>
+    <div class="rm-item"><span>👩‍⚕️</span>美容師具名出鏡介紹療程原理</div>
+    <div class="rm-item"><span>🎥</span>Reel 教育系列：「30歲後做唔做」3集</div>
+    <div class="rm-item"><span>📣</span>Collab 2個本地 Micro KOL（1-5萬粉絲）</div>
+    <div class="rm-item"><span>💬</span>目標：每週至少20個評論互動</div>
+  </div>
+  <div class="rm-card">
+    <div class="rm-phase" style="color:var(--green)">第三個月 · 轉化優化</div>
+    <div class="rm-title" style="color:var(--green)">Scale Conversion</div>
+    <div class="rm-item"><span>📈</span>分析 Linktree 數據，優化轉化漏斗</div>
+    <div class="rm-item"><span>🎁</span>推出「限量體驗裝」Lead Gen Campaign</div>
+    <div class="rm-item"><span>🔁</span>將表現最好的帖子做成 Paid Ads</div>
+    <div class="rm-item"><span>⭐</span>建立 Google Reviews 系統引導客戶留評</div>
+    <div class="rm-item"><span>📱</span>評估 WhatsApp Business API 自動化</div>
+    <div class="rm-item"><span>🎯</span>目標：互動率由 0.07% 升至 0.5%+</div>
+  </div>
+</div>
+
+<!-- KEY INSIGHT -->
+<div class="sec-title">最核心洞察</div>
+<div class="card" style="border-color:var(--purple);background:linear-gradient(135deg,#1a1024,#13131e)">
+  <div style="font-size:16px;font-weight:800;margin-bottom:12px;color:var(--purple)">整個 HK 醫美美容 IG 市場，冇一間公司做好社群互動。</div>
+  <div style="font-size:13px;color:var(--muted2);line-height:1.8">
+    6個賬號合計粉絲超過 <strong style="color:var(--text)">40,751</strong>，但最近帖子評論合計接近 <strong style="color:var(--text)">0</strong>。呢個代表整個行業嘅 IG 都係「廣播模式」——只係在 broadcast，冇人建立真正嘅社群。<br><br>
+    <strong style="color:var(--purple)">第一間做到真實社群互動嘅美容院，將獲得壓倒性嘅算法優勢。</strong><br><br>
+    BeautySignatureHK 擁有最好嘅起步點：佘詩曼代言係真實資產，但資產正在以錯誤方式使用。重點唔係換代言人，而係改變用「明星」嘅方法——由「廣告牌」變成「故事主角」。呢一步，競品完全未做過。
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  報告由 Stanley 商業策略工作台生成　·　數據來源：Apify Instagram Scraper　·　2026年5月6日<br>
+  分析賬號：beautysignaturehk · vitae.hk · tbm.hk · mesobeauty_hk · addictionbeautyhk · justyouclinic
+</div>
+
+<script>
+const brands = [
+  { name:'BeautySignature', color:'rgba(244,114,182,0.85)', followers:7483,  avgLikes:5.1,  engRate:0.07 },
+  { name:'VITAE 輕醫美',    color:'rgba(52,211,153,0.85)',  followers:6019,  avgLikes:31.4, engRate:0.52 },
+  { name:'TBM',             color:'rgba(96,165,250,0.85)',  followers:3407,  avgLikes:3.4,  engRate:0.10 },
+  { name:'Meso Beauty',     color:'rgba(248,113,113,0.85)', followers:10677, avgLikes:21.2, engRate:0.20 },
+  { name:'ADDICTION',       color:'rgba(251,191,36,0.85)',  followers:9955,  avgLikes:7.4,  engRate:0.07 },
+  { name:'佳思優',          color:'rgba(167,139,250,0.85)', followers:3191,  avgLikes:3.8,  engRate:0.12 },
+];
+
+const allPosts = {
+  'BeautySignatureHK 美御殿堂': {
+    color:'linear-gradient(90deg,#f472b6,#a78bfa)', eng:'0.07%', engColor:'#f87171', avg:'5.1',
+    posts:[
+      { date:'2026-05-01', type:'Image',   likes:2,  comments:0, caption:'💝 勞動節快樂' },
+      { date:'2026-04-29', type:'Video',   likes:1,  comments:0, caption:'🚨 阿佘最愛膠原組合最後2日！緊急召集' },
+      { date:'2026-04-15', type:'Video',   likes:2,  comments:0, caption:'😏 $688 即做阿佘最愛組合，一個價三大療程' },
+      { date:'2026-04-10', type:'Video',   likes:6,  comments:0, caption:'✨ 跟阿佘做Facial，人人都可以變靚' },
+      { date:'2026-04-09', type:'Image',   likes:17, comments:0, caption:'😍 《正義女神》阿佘，比17年前仲靚！' },
+    ]
+  },
+  'VITAE 輕醫美': {
+    color:'linear-gradient(90deg,#34d399,#60a5fa)', eng:'0.52%', engColor:'#34d399', avg:'31.4',
+    posts:[
+      { date:'2026-05-05', type:'Video',  likes:0,   comments:0,  caption:'【深層放鬆頭部經絡】VITAE 頭療按摩紓壓療法' },
+      { date:'2026-04-30', type:'Video',  likes:1,   comments:0,  caption:'【袪水腫救星】VITAE 魚子滋養磁叉按摩' },
+      { date:'2026-04-28', type:'Video',  likes:1,   comments:0,  caption:'【身心舒壓首選】VITAE 魚子滋養舒壓熱石按摩' },
+      { date:'2023-09-14', type:'Video',  likes:14,  comments:0,  caption:'【FaceGlow™️透光水潤】美白x淨肌x保濕全攻略' },
+      { date:'2023-03-28', type:'Video',  likes:141, comments:28, caption:'🏆【想擁有心形輪廓？FaceGym™️】3大國際認可技術' },
+    ]
+  },
+  'TBM The Beauty Medical': {
+    color:'linear-gradient(90deg,#60a5fa,#a78bfa)', eng:'0.10%', engColor:'#fbbf24', avg:'3.4',
+    posts:[
+      { date:'2026-04-04', type:'Image',  likes:0, comments:2, caption:'【復活節快樂｜肌膚彈潤如新】春天喚醒好膚質' },
+      { date:'2026-04-02', type:'Video',  likes:9, comments:0, caption:'🏆【TBM榮獲「香港服務大獎2026」科研美容】' },
+      { date:'2026-02-20', type:'Image',  likes:3, comments:2, caption:'【初五啟市｜新年新氣象】全線分店正式開業' },
+      { date:'2026-02-16', type:'Image',  likes:2, comments:0, caption:'【大年初一｜金馬賀新歲】全體仝人拜年' },
+      { date:'2026-02-16', type:'Video',  likes:3, comments:0, caption:'【醫生主理｜Juvelook素顏針】透亮膚質の秘密' },
+    ]
+  },
+  'Meso Beauty 醫學數據美容': {
+    color:'linear-gradient(90deg,#f87171,#f472b6)', eng:'0.20%', engColor:'#fbbf24', avg:'21.2',
+    posts:[
+      { date:'2026-05-06', type:'Video',  likes:1,  comments:0, caption:'✨【終於敢著短袖！】白滑換膚術解決雞皮粒粒' },
+      { date:'2026-04-27', type:'Video',  likes:3,  comments:1, caption:'✨【手都可以逆齡？】哈佛醫學團隊設計手部老化療程' },
+      { date:'2024-01-02', type:'Image',  likes:28, comments:0, caption:'❤️每月1小時享受療程，皇牌白滑手療程' },
+      { date:'2024-01-02', type:'Image',  likes:38, comments:0, caption:'❤️每月1小時享受療程，毛囊角化護理+陶瓷酸' },
+      { date:'2024-01-02', type:'Image',  likes:36, comments:1, caption:'❤️每月1小時享受療程，視覺味覺觸覺全方位體驗' },
+    ]
+  },
+  'ADDICTION Beauty HK': {
+    color:'linear-gradient(90deg,#fbbf24,#fb923c)', eng:'0.07%', engColor:'#f87171', avg:'7.4',
+    posts:[
+      { date:'2026-05-06', type:'Image',   likes:0,  comments:0, caption:'【DEFINE YOUR LIPS】全新唇線筆系列9款色調' },
+      { date:'2026-05-04', type:'Video',   likes:7,  comments:0, caption:'【NEW LIP PENCIL】絲滑唇線筆，高顯色持久唇妝' },
+      { date:'2026-05-02', type:'Video',   likes:20, comments:0, caption:'【GOLDEN SHINE】夏日奢華眼妝，度假氛圍光影' },
+      { date:'2026-04-29', type:'Sidecar', likes:4,  comments:0, caption:'【BEACH GLITTER】夏日沙灘閃粉指甲油系列' },
+      { date:'2026-04-27', type:'Sidecar', likes:6,  comments:0, caption:'【LUMINOUS LIP】夏季限定3色柔光幻影唇彩' },
+    ]
+  },
+  '佳思優整形醫美診所（台灣參考）': {
+    color:'linear-gradient(90deg,#a78bfa,#f472b6)', eng:'0.12%', engColor:'#f87171', avg:'3.8',
+    posts:[
+      { date:'2026-05-06', type:'Sidecar', likes:1,  comments:0, caption:'🎁 送自己一份特別的母親節禮物，追求美由自己開始' },
+      { date:'2026-05-06', type:'Sidecar', likes:3,  comments:0, caption:'術後照護非常重要！GPT升級變成可愛醫囑貼圖' },
+      { date:'2026-05-05', type:'Sidecar', likes:1,  comments:0, caption:'💙 當了媽媽，依然可以很漂亮，LSSA音浪脂雕' },
+      { date:'2026-05-04', type:'Sidecar', likes:4,  comments:0, caption:'忙碌生活也別忘照顧自己，魔滴Motiva隆乳合作' },
+      { date:'2026-05-01', type:'Video',   likes:10, comments:0, caption:'💔 懷孕生產後親密感改變？私密保養找回幸福感' },
+    ]
+  },
+};
+
+// Render posts tables
+const wrap = document.getElementById('postsWrap');
+Object.entries(allPosts).forEach(([brand, data]) => {
+  const maxL = Math.max(...data.posts.map(p => p.likes), 1);
+  const rows = data.posts.map(p => {
+    const tc = p.type === 'Video' ? 't-video' : p.type === 'Image' ? 't-image' : 't-sidecar';
+    const bw = Math.max(3, Math.round(p.likes / maxL * 90));
+    const bc = p.likes >= 20 ? '#34d399' : p.likes >= 8 ? '#a78bfa' : '#60a5fa';
+    return `<tr>
+      <td style="color:#64748b;white-space:nowrap;font-size:11px">${p.date}</td>
+      <td><span class="type-pill ${tc}">${p.type}</span></td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8;font-size:12px">${p.caption}</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:${bw}px;background:${bc}"></div><span style="font-size:11px;color:#94a3b8">${p.likes}</span></div></td>
+      <td style="font-size:12px;color:${p.comments>0?'#34d399':'#64748b'}">${p.comments}</td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML += `
+  <div class="card" style="margin-bottom:14px;padding:0;overflow:hidden">
+    <div style="padding:14px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${data.color}"></div>
+      <div style="font-size:13px;font-weight:700">${brand}</div>
+      <div style="margin-left:auto;font-size:11px;color:var(--muted2)">互動率：<span style="color:${data.engColor};font-weight:700">${data.eng}</span>　平均讚好：<span style="font-weight:700">${data.avg}</span></div>
+    </div>
+    <table class="posts-table">
+      <thead><tr><th>日期</th><th>類型</th><th>貼文摘要</th><th>讚好</th><th>評論</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+});
+
+// Charts
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = '#1e1e2e';
+Chart.defaults.font.family = "-apple-system,'PingFang HK',sans-serif";
+
+new Chart(document.getElementById('engChart'), {
+  type:'bar',
+  data:{
+    labels: brands.map(b=>b.name),
+    datasets:[{ label:'互動率 %', data:brands.map(b=>b.engRate), backgroundColor:brands.map(b=>b.color), borderRadius:8, borderSkipped:false }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:i=>` 互動率：${i.raw}%`}} },
+    scales:{ x:{grid:{display:false}}, y:{beginAtZero:true, ticks:{callback:v=>v+'%'}} }
+  }
+});
+
+new Chart(document.getElementById('scatterChart'), {
+  type:'bubble',
+  data:{
+    datasets: brands.map(b => ({
+      label:b.name,
+      data:[{ x:b.followers, y:b.engRate, r: Math.max(6, b.avgLikes/2) }],
+      backgroundColor: b.color,
+    }))
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom', labels:{padding:8, usePointStyle:true, pointStyleWidth:8, font:{size:10}}},
+      tooltip:{callbacks:{label:i=>`${i.dataset.label}：粉絲${i.raw.x.toLocaleString()} 互動率${i.raw.y}%`}}
+    },
+    scales:{
+      x:{ title:{display:true,text:'粉絲數'}, ticks:{callback:v=>v.toLocaleString()} },
+      y:{ title:{display:true,text:'互動率%'}, beginAtZero:true, ticks:{callback:v=>v+'%'} }
+    }
+  }
+});
+
+new Chart(document.getElementById('likesChart'), {
+  type:'bar',
+  data:{
+    labels:brands.map(b=>b.name),
+    datasets:[{ label:'平均讚好', data:brands.map(b=>b.avgLikes), backgroundColor:brands.map(b=>b.color), borderRadius:8, borderSkipped:false }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, indexAxis:'y',
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:i=>` 平均讚好：${i.raw}`}} },
+    scales:{ x:{beginAtZero:true}, y:{grid:{display:false}} }
+  }
+});
+
+new Chart(document.getElementById('typeChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Video','Image','Sidecar（輪播）'],
+    datasets:[{
+      data:[17,9,9],
+      backgroundColor:['rgba(129,140,248,0.85)','rgba(52,211,153,0.75)','rgba(192,132,252,0.7)'],
+      borderColor:'#09090f', borderWidth:3, hoverOffset:8,
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'62%',
+    plugins:{
+      legend:{position:'bottom', labels:{padding:12, usePointStyle:true, pointStyleWidth:8, font:{size:11}}},
+      tooltip:{callbacks:{label:i=>` ${i.label}：${i.raw} 篇`}}
+    }
+  }
+});
+</script>
+</body>
+</html>

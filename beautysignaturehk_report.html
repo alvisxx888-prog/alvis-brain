@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>競品分析報告 — BeautySignatureHK</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f0f13;
+      --card: #1a1a24;
+      --card2: #22222f;
+      --accent: #c084fc;
+      --accent2: #818cf8;
+      --accent3: #34d399;
+      --danger: #f87171;
+      --warn: #fbbf24;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #2d2d3d;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'PingFang HK', 'Noto Sans HK', sans-serif;
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    /* ── Header ── */
+    .header {
+      max-width: 1100px;
+      margin: 0 auto 40px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+    }
+    .avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; flex-shrink: 0;
+    }
+    .header-text h1 { font-size: 22px; font-weight: 700; }
+    .header-text p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1e1e2e; border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--muted);
+      margin-top: 8px;
+    }
+    .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent3); }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-title {
+      font-size: 13px; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+      margin: 36px 0 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .grid { display: grid; gap: 16px; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 768px) {
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .card-label {
+      font-size: 11px; font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+    }
+    .card-value {
+      font-size: 30px; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .card-danger .card-value {
+      background: linear-gradient(135deg, var(--danger), var(--warn));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .card-good .card-value {
+      background: linear-gradient(135deg, var(--accent3), #6ee7b7);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* ── Chart wrapper ── */
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .chart-title {
+      font-size: 14px; font-weight: 600; margin-bottom: 18px; color: var(--text);
+    }
+    .chart-wrap { position: relative; height: 240px; }
+
+    /* ── Post table ── */
+    .post-table { width: 100%; border-collapse: collapse; }
+    .post-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: var(--muted); padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .post-table td {
+      padding: 11px 12px; font-size: 13px;
+      border-bottom: 1px solid #1e1e2c;
+      vertical-align: middle;
+    }
+    .post-table tr:last-child td { border-bottom: none; }
+    .post-table tr:hover td { background: var(--card2); }
+    .type-badge {
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+    }
+    .type-video { background: #312e81; color: #a5b4fc; }
+    .type-image { background: #064e3b; color: #6ee7b7; }
+    .engagement-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .engagement-bar {
+      height: 6px; border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      min-width: 2px; transition: width .3s;
+    }
+    .engagement-num { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+    /* ── Insight cards ── */
+    .insight {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .insight-icon {
+      font-size: 22px; flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon-red { background: #2d1515; }
+    .icon-green { background: #0d2d1e; }
+    .icon-yellow { background: #2d2000; }
+    .insight-title { font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+    .insight-body { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+    /* ── Strategy table ── */
+    .strat-table { width: 100%; border-collapse: collapse; }
+    .strat-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: var(--muted); padding: 10px 14px;
+      background: var(--card2);
+    }
+    .strat-table th:first-child { border-radius: 8px 0 0 0; }
+    .strat-table th:last-child { border-radius: 0 8px 0 0; }
+    .strat-table td {
+      padding: 12px 14px; font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .strat-table tr:last-child td { border-bottom: none; }
+    .pill {
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+    }
+    .pill-red { background: #2d1515; color: var(--danger); }
+    .pill-green { background: #0d2d1e; color: var(--accent3); }
+
+    /* ── Footer ── */
+    .footer {
+      max-width: 1100px; margin: 48px auto 0;
+      text-align: center; color: var(--muted); font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="avatar">💄</div>
+  <div class="header-text">
+    <h1>競品分析報告 — BeautySignatureHK 美御殿堂</h1>
+    <p>Instagram 賬號深度解析　·　數據截取日期：2026年5月6日</p>
+    <div class="badge"><span class="dot"></span>Public Account　·　Lifestyle Services　·　商業賬號</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ══ KPI ══ -->
+  <div class="section-title">核心數據</div>
+  <div class="grid grid-4">
+    <div class="card">
+      <div class="card-label">粉絲數</div>
+      <div class="card-value">7,483</div>
+      <div class="card-sub">跟隨僅 39 個賬號</div>
+    </div>
+    <div class="card">
+      <div class="card-label">總貼文數</div>
+      <div class="card-value">222</div>
+      <div class="card-sub">IGTV 2 條　Highlights 2 個</div>
+    </div>
+    <div class="card card-danger">
+      <div class="card-label">平均互動率</div>
+      <div class="card-value">0.07%</div>
+      <div class="card-sub">行業正常：1–3%　差距 14–43x</div>
+    </div>
+    <div class="card card-danger">
+      <div class="card-label">平均評論數</div>
+      <div class="card-value">0</div>
+      <div class="card-sub">最近 12 posts 全部 0 評論</div>
+    </div>
+  </div>
+
+  <!-- ══ Charts row ══ -->
+  <div class="section-title">數據視覺化</div>
+  <div class="grid grid-3">
+
+    <!-- Engagement per post -->
+    <div class="chart-card" style="grid-column: span 2;">
+      <div class="chart-title">各 Post 讚好數趨勢（最近 12 篇）</div>
+      <div class="chart-wrap">
+        <canvas id="likesChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Content type pie -->
+    <div class="chart-card">
+      <div class="chart-title">內容類型分佈</div>
+      <div class="chart-wrap">
+        <canvas id="typeChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="grid grid-2" style="margin-top:16px;">
+
+    <!-- Engagement rate comparison -->
+    <div class="chart-card">
+      <div class="chart-title">互動率對比（行業基準）</div>
+      <div class="chart-wrap">
+        <canvas id="benchmarkChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Posting frequency by month -->
+    <div class="chart-card">
+      <div class="chart-title">每月發帖頻次</div>
+      <div class="chart-wrap">
+        <canvas id="freqChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ Post breakdown ══ -->
+  <div class="section-title">貼文明細</div>
+  <div class="card" style="padding:0; overflow:hidden;">
+    <table class="post-table">
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>類型</th>
+          <th style="max-width:320px;">標題摘要</th>
+          <th>讚好</th>
+          <th>評論</th>
+        </tr>
+      </thead>
+      <tbody id="postsTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ══ Insights ══ -->
+  <div class="section-title">關鍵洞察</div>
+  <div class="grid grid-3">
+    <div class="insight">
+      <div class="insight-icon icon-red">⚠️</div>
+      <div>
+        <div class="insight-title">粉絲數字虛胖</div>
+        <div class="insight-body">7,483 粉絲但平均只有 5 個讚，互動率 0.07%，極大機率包含 bought followers 或 inactive audience。社交媒體算法只會推廣高互動帖子，佢哋的賬號實際觸達率極低。</div>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-icon icon-red">🔁</div>
+      <div>
+        <div class="insight-title">內容嚴重重複</div>
+        <div class="insight-body">最近 12 posts 有 8 篇係「阿佘最愛 $688 組合」的變體，換湯不換藥。用戶看到第三次已麻木，IG 算法更會降低重複內容的觸達率（Reach Penalty）。</div>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-icon icon-red">💬</div>
+      <div>
+        <div class="insight-title">零社群建立</div>
+        <div class="insight-body">12 篇 posts 評論全部為 0，顯示賬號完全係「廣播模式」，無社群互動。IG 算法重視評論多於讚好，長期無評論會導致自然觸達率持續下滑。</div>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-icon icon-yellow">⭐</div>
+      <div>
+        <div class="insight-title">最高互動：KOL 貼文</div>
+        <div class="insight-body">佘詩曼相關帖子（4月9日）獲 17 個讚，係其他帖子的 2–8 倍。顯示粉絲對明星內容有反應，但依賴單一 KOL 係高風險策略——代言合約終止即失去所有差異化。</div>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-icon icon-yellow">📱</div>
+      <div>
+        <div class="insight-title">WhatsApp CTA 依賴過重</div>
+        <div class="insight-body">所有帖子的行動呼籲都係 WhatsApp 查詢（+852 5500 2000），無法規模化。每條 lead 都要人手跟進，限制了轉化上限，而且無法追蹤哪條內容帶嚟最多 leads。</div>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-icon icon-green">🎯</div>
+      <div>
+        <div class="insight-title">你的切入機會</div>
+        <div class="insight-body">佢哋只做美容，你有「痛症管理 + 美容」雙線。差異化已存在，只需建立真實社群互動：教育型內容、客戶 before/after、問答互動。真實的 100 個活躍粉絲，勝過虛假的 7,000。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Strategy comparison ══ -->
+  <div class="section-title">策略對比：佢哋 vs 你</div>
+  <div class="card" style="padding:0; overflow:hidden;">
+    <table class="strat-table">
+      <thead>
+        <tr>
+          <th>維度</th>
+          <th>BeautySignatureHK（對手）</th>
+          <th>Stanley 建議方向</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>內容策略</strong></td>
+          <td><span class="pill pill-red">單一</span> 反覆推同一個 $688 組合</td>
+          <td><span class="pill pill-green">多元</span> 教育內容 + 客戶故事 + 產品介紹 + 痛症科普</td>
+        </tr>
+        <tr>
+          <td><strong>差異化</strong></td>
+          <td><span class="pill pill-red">依賴 KOL</span> 佘詩曼單一明星背書</td>
+          <td><span class="pill pill-green">自身專業</span> Stanley 個人 personal brand 建立</td>
+        </tr>
+        <tr>
+          <td><strong>社群互動</strong></td>
+          <td><span class="pill pill-red">零互動</span> 廣播式，無評論</td>
+          <td><span class="pill pill-green">主動互動</span> 回覆每條評論、問問題、做投票</td>
+        </tr>
+        <tr>
+          <td><strong>客群定位</strong></td>
+          <td><span class="pill pill-red">模糊</span> 純美容，年齡層不清晰</td>
+          <td><span class="pill pill-green">精準</span> 美容線 + 痛症線分開運營，各攻不同年齡層</td>
+        </tr>
+        <tr>
+          <td><strong>轉化路徑</strong></td>
+          <td><span class="pill pill-red">單一</span> 全靠 WhatsApp，無法追蹤</td>
+          <td><span class="pill pill-green">多層</span> IG → Link in Bio → 表單 / WhatsApp，可追蹤</td>
+        </tr>
+        <tr>
+          <td><strong>內容頻次</strong></td>
+          <td>約每週 2–3 次</td>
+          <td>建議每週 4–5 次（含 Stories 每日）</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /container -->
+
+<div class="footer">
+  <p>報告由 Stanley 商業策略工作台生成　·　數據來源：Apify Instagram Scraper　·　2026年5月6日</p>
+</div>
+
+<script>
+  /* ── Data ── */
+  const posts = [
+    { date: "05-01", type: "Image", likes: 2,  comments: 0, caption: "💝 勞動節快樂" },
+    { date: "04-29", type: "Video", likes: 1,  comments: 0, caption: "🚨 阿佘最愛膠原組合最後2日" },
+    { date: "04-15", type: "Video", likes: 2,  comments: 0, caption: "😏 $688 阿佘最愛組合" },
+    { date: "04-10", type: "Video", likes: 6,  comments: 0, caption: "✨ 跟阿佘做Facial 人人都可以變靚" },
+    { date: "04-09", type: "Image", likes: 17, comments: 0, caption: "😍 《正義女神》阿佘比17年前仲靚" },
+    { date: "04-05", type: "Video", likes: 4,  comments: 0, caption: "💝 復活節快樂" },
+    { date: "03-31", type: "Video", likes: 4,  comments: 0, caption: "🔥 $688 不老女神急救包" },
+    { date: "03-27", type: "Video", likes: 4,  comments: 0, caption: "🤩 $388 三款眼部療程" },
+    { date: "03-11", type: "Video", likes: 7,  comments: 0, caption: "😏 $688 即做阿佘最愛組合" },
+    { date: "03-08", type: "Image", likes: 11, comments: 0, caption: "💝 婦女節快樂" },
+    { date: "03-03", type: "Video", likes: 9,  comments: 0, caption: "😏 明星藝人最愛：法國專利面部細胞Pilates" },
+    { date: "03-03", type: "Image", likes: 6,  comments: 0, caption: "🌕 元宵佳節快樂" },
+  ];
+
+  /* ── Populate table ── */
+  const tbody = document.getElementById('postsTableBody');
+  const maxLikes = Math.max(...posts.map(p => p.likes));
+  posts.forEach(p => {
+    const tr = document.createElement('tr');
+    const barW = Math.max(4, Math.round((p.likes / maxLikes) * 120));
+    tr.innerHTML = `
+      <td style="color:var(--muted);white-space:nowrap;">2026-${p.date}</td>
+      <td><span class="type-badge type-${p.type.toLowerCase()}">${p.type}</span></td>
+      <td style="max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.caption}</td>
+      <td>
+        <div class="engagement-bar-wrap">
+          <div class="engagement-bar" style="width:${barW}px;"></div>
+          <span class="engagement-num">${p.likes}</span>
+        </div>
+      </td>
+      <td style="color:var(--danger);">${p.comments}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  /* ── Chart defaults ── */
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.borderColor = '#2d2d3d';
+  Chart.defaults.font.family = "-apple-system, 'PingFang HK', sans-serif";
+
+  /* ── Likes trend ── */
+  new Chart(document.getElementById('likesChart'), {
+    type: 'bar',
+    data: {
+      labels: posts.map(p => p.date),
+      datasets: [{
+        label: '讚好數',
+        data: posts.map(p => p.likes),
+        backgroundColor: posts.map(p =>
+          p.likes >= 10 ? 'rgba(192,132,252,0.85)' :
+          p.likes >= 5  ? 'rgba(129,140,248,0.7)'  :
+                          'rgba(129,140,248,0.35)'
+        ),
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => `2026-${items[0].label}`,
+            label: (item) => ` 讚好：${item.raw}　評論：0`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { stepSize: 4 } }
+      }
+    }
+  });
+
+  /* ── Content type pie ── */
+  new Chart(document.getElementById('typeChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Video', 'Image'],
+      datasets: [{
+        data: [8, 4],
+        backgroundColor: ['rgba(129,140,248,0.85)', 'rgba(52,211,153,0.75)'],
+        borderColor: ['#1a1a24'],
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10 }
+        },
+        tooltip: {
+          callbacks: { label: (item) => ` ${item.label}：${item.raw} 篇 (${Math.round(item.raw/12*100)}%)` }
+        }
+      }
+    }
+  });
+
+  /* ── Benchmark bar ── */
+  new Chart(document.getElementById('benchmarkChart'), {
+    type: 'bar',
+    data: {
+      labels: ['BeautySignatureHK', '行業低標', '行業平均', '行業優秀'],
+      datasets: [{
+        label: '互動率 %',
+        data: [0.07, 1, 2, 4],
+        backgroundColor: [
+          'rgba(248,113,113,0.85)',
+          'rgba(251,191,36,0.5)',
+          'rgba(129,140,248,0.6)',
+          'rgba(52,211,153,0.7)',
+        ],
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (item) => ` 互動率：${item.raw}%` }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: { callback: v => v + '%' }
+        },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+
+  /* ── Posting frequency ── */
+  new Chart(document.getElementById('freqChart'), {
+    type: 'line',
+    data: {
+      labels: ['3月', '4月', '5月（截至今日）'],
+      datasets: [{
+        label: '發帖數',
+        data: [5, 5, 2],
+        borderColor: 'rgba(192,132,252,0.9)',
+        backgroundColor: 'rgba(192,132,252,0.1)',
+        borderWidth: 2.5,
+        pointBackgroundColor: 'rgba(192,132,252,1)',
+        pointRadius: 5,
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (item) => ` 發帖：${item.raw} 篇` }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全員大培訓 v2.0 — Stanley Team 2026-05-31</title>
+<style>
+  :root {
+    --bg: #0c0e14;
+    --card: #13161f;
+    --card2: #1a1e2e;
+    --accent: #7c6ff7;
+    --accent2: #f472b6;
+    --accent3: #34d399;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --text: #e8eaf6;
+    --muted: #8b8fa8;
+    --border: #252840;
+    --gold: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #13161f 0%, #1a1e2e 50%, #0c0e14 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 52px 40px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 80% 40%, rgba(124,111,247,.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 20% 70%, rgba(244,114,182,.10) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 20px; position: relative; }
+  .header-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(124,111,247,.2);
+    border: 1px solid rgba(124,111,247,.4);
+    color: #b8b0fc;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 16px;
+  }
+  .v-badge {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 12px;
+    letter-spacing: 1px;
+  }
+  .header h1 { font-size: 34px; font-weight: 900; margin-bottom: 10px; line-height: 1.2; }
+  .header h1 .hi { color: var(--accent); }
+  .header h1 .hi2 { color: var(--accent2); }
+  .header-meta { color: var(--muted); font-size: 13px; display: flex; gap: 20px; flex-wrap: wrap; margin-top: 14px; }
+  .header-meta span { display: flex; align-items: center; gap: 6px; }
+  .header-meta .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; }
+  .new-members-pill {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px;
+  }
+  .new-pill {
+    background: rgba(52,211,153,.15);
+    border: 1px solid rgba(52,211,153,.35);
+    color: #6ee7b7;
+    font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .new-pill::before { content: '+ NEW'; font-size: 9px; color: #34d399; font-weight: 900; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1260px; margin: 0 auto; padding: 40px 24px 100px; }
+  .section { margin-bottom: 52px; }
+  .section-title {
+    font-size: 12px; font-weight: 800; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 24px; display: flex; align-items: center; gap: 12px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-title .label { color: var(--accent); }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .grid-agent { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media(max-width:1100px) { .grid-agent { grid-template-columns: repeat(2,1fr); } }
+  @media(max-width:900px) { .grid-3,.grid-2,.grid-4 { grid-template-columns: 1fr; } .grid-agent { grid-template-columns: 1fr; } }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .card-accent { border-color: rgba(124,111,247,.3); }
+  .card-green { border-color: rgba(52,211,153,.3); }
+  .card-red { border-color: rgba(248,113,113,.3); }
+  .card-yellow { border-color: rgba(251,191,36,.3); }
+  .card-pink { border-color: rgba(244,114,182,.3); }
+
+  /* ── AGENT CARD ── */
+  .agent-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s, border-color .2s;
+  }
+  .agent-card:hover { transform: translateY(-2px); }
+  .agent-card.new-agent { border-color: rgba(52,211,153,.4); }
+  .agent-card.new-agent::before {
+    content: 'NEW';
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(52,211,153,.2);
+    border: 1px solid rgba(52,211,153,.4);
+    color: #34d399; font-size: 9px; font-weight: 900; letter-spacing: 2px;
+    padding: 2px 8px; border-radius: 10px;
+  }
+  .agent-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 14px;
+    font-weight: 700;
+  }
+  .agent-name { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+  .agent-role { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .score-label { font-size: 11px; color: var(--muted); min-width: 36px; }
+  .score-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 3px; transition: width 1s; }
+  .score-val { font-size: 13px; font-weight: 700; min-width: 32px; text-align: right; }
+  .agent-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 10px;
+    margin: 3px 3px 3px 0;
+  }
+
+  /* ── KPI TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--card2); color: var(--muted);
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid rgba(37,40,64,.6); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(124,111,247,.04); }
+
+  /* ── STATUS BADGES ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+  }
+  .badge-green { background: rgba(52,211,153,.15); color: #6ee7b7; border: 1px solid rgba(52,211,153,.3); }
+  .badge-yellow { background: rgba(251,191,36,.15); color: #fde68a; border: 1px solid rgba(251,191,36,.3); }
+  .badge-red { background: rgba(248,113,113,.15); color: #fca5a5; border: 1px solid rgba(248,113,113,.3); }
+  .badge-purple { background: rgba(167,139,250,.15); color: #c4b5fd; border: 1px solid rgba(167,139,250,.3); }
+  .badge-blue { background: rgba(96,165,250,.15); color: #93c5fd; border: 1px solid rgba(96,165,250,.3); }
+
+  /* ── ALERT BOX ── */
+  .alert-box {
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .alert-red { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25); }
+  .alert-yellow { background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.25); }
+  .alert-green { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.25); }
+  .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .alert-title { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+  .alert-body { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* ── TIMELINE ── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item { display: flex; gap: 16px; position: relative; padding-bottom: 24px; }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 36px; }
+  .tl-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; font-weight: 700; }
+  .tl-line { flex: 1; width: 2px; background: var(--border); margin-top: 4px; }
+  .tl-item:last-child .tl-line { display: none; }
+  .tl-content { flex: 1; padding-top: 4px; }
+  .tl-date { font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; }
+  .tl-tasks { display: flex; flex-direction: column; gap: 6px; }
+  .tl-task {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 13px; display: flex; align-items: center; gap: 10px;
+  }
+  .tl-task .who { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; white-space: nowrap; }
+
+  /* ── COLLAB MATRIX ── */
+  .collab-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid rgba(37,40,64,.6);
+    font-size: 13px;
+  }
+  .collab-row:last-child { border-bottom: none; }
+  .collab-from { font-weight: 700; min-width: 90px; }
+  .collab-arrow { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+  .collab-to { font-weight: 700; min-width: 90px; }
+  .collab-desc { color: var(--muted); flex: 1; }
+  .collab-trigger { font-size: 11px; color: var(--accent); background: rgba(124,111,247,.1); padding: 2px 8px; border-radius: 8px; white-space: nowrap; }
+
+  /* ── SCORE SUMMARY ── */
+  .score-summary { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  @media(max-width:900px) { .score-summary { grid-template-columns: repeat(2,1fr); } }
+  .score-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; text-align: center;
+  }
+  .score-card .agent-n { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+  .score-card .v1 { font-size: 11px; color: var(--muted); }
+  .score-card .v2 { font-size: 26px; font-weight: 900; margin: 6px 0; }
+  .score-card .delta { font-size: 12px; font-weight: 700; }
+  .delta-up { color: #34d399; }
+  .delta-new { color: #60a5fa; }
+
+  /* ── WORKFLOW BOX ── */
+  .wf-box {
+    background: rgba(0,0,0,.3);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+    font-family: 'Courier New', monospace; font-size: 12.5px;
+    color: #a5afd6; line-height: 1.7;
+    white-space: pre-wrap;
+    margin-top: 12px;
+  }
+  .wf-box .hl { color: #7c6ff7; }
+  .wf-box .hl2 { color: #34d399; }
+  .wf-box .hl3 { color: #fbbf24; }
+
+  /* ── PRESS TEST ── */
+  .test-result {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(37,40,64,.6);
+    font-size: 13px;
+  }
+  .test-result:last-child { border-bottom: none; }
+  .test-label { flex: 1; }
+  .test-before { color: var(--muted); min-width: 130px; font-size: 12px; }
+  .test-after { color: var(--green); min-width: 130px; font-size: 12px; }
+  .test-stars { font-size: 14px; }
+
+  /* ── TAB NAV ── */
+  .tab-nav { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab-btn {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    padding: 8px 18px; border-radius: 20px; cursor: pointer;
+    transition: all .2s; text-transform: uppercase;
+  }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── GAP TAG ── */
+  .gap-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(37,40,64,.5); }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-num { color: var(--accent); font-weight: 800; font-size: 14px; flex-shrink: 0; min-width: 20px; }
+  .gap-text { font-size: 13px; }
+  .gap-fix { font-size: 12px; color: var(--green); margin-top: 4px; }
+
+  /* ── MISC ── */
+  .big-num { font-size: 48px; font-weight: 900; line-height: 1; }
+  .small-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+  .tag-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .kpi-tag {
+    background: var(--card2); border: 1px solid var(--border);
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    padding: 4px 10px; border-radius: 8px;
+  }
+  .urgent-strip {
+    background: linear-gradient(90deg, rgba(248,113,113,.15), transparent);
+    border-left: 3px solid var(--red);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px; margin-bottom: 10px;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center; padding: 40px; color: var(--muted); font-size: 12px;
+    border-top: 1px solid var(--border); margin-top: 60px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<div class="header">
+  <div class="header-badge">Stanley Team · Full Training Report</div>
+  <div class="header-top">
+    <div>
+      <h1>全員大培訓 <span class="hi">v2</span><span class="hi2">.0</span></h1>
+      <div class="header-meta">
+        <span><span class="dot"></span> 2026-05-31</span>
+        <span><span class="dot"></span> 距 v1.0：14 日</span>
+        <span><span class="dot"></span> 全員出席：9人</span>
+        <span><span class="dot"></span> 主持：Amy</span>
+      </div>
+      <div class="new-members-pill">
+        <div class="new-pill"> Rex（廣告投放）</div>
+        <div class="new-pill"> Mia（數據追蹤）</div>
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div class="v-badge">VERSION 2.0</div>
+      <div style="margin-top:12px; font-size:13px; color:var(--muted);">整體系統評分</div>
+      <div style="font-size:44px; font-weight:900; color:var(--green); line-height:1;">9.0<span style="font-size:20px; color:var(--muted)">/10</span></div>
+      <div style="font-size:12px; color:var(--green);">↑ +0.6 vs v1.0（8.4）</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ══════════ PART 0: V1.0 AUDIT ══════════ -->
+  <div class="section">
+    <div class="section-title"><span class="label">PART 0</span> V1.0 成果審計（14日執行回顧）</div>
+
+    <div class="alert-box alert-red" style="margin-bottom:16px;">
+      <div class="alert-icon">🔴</div>
+      <div>
+        <div class="alert-title">緊急：Toxic 兩個 Deadline 在今明兩日</div>
+        <div class="alert-body">
+          Apify 腳本 → 今日（2026-05-31）截止 · WhatsApp 系統 → 明日（2026-06-01）截止<br>
+          如果 miss，整個 lead capture 系統係空殼，所有 lead 全部漏失。
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>關鍵 KPI</th>
+            <th>v1.0 目標</th>
+            <th>14日推算狀態</th>
+            <th>評分</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Amy</strong></td>
+            <td>分流準確率</td>
+            <td>≥95%</td>
+            <td><span class="badge badge-green">🟢 估計 90%+</span></td>
+            <td><strong>8/10</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Anna</strong></td>
+            <td>每月帖數</td>
+            <td>≥12條</td>
+            <td><span class="badge badge-yellow">🟡 14日約6條</span></td>
+            <td><strong>7/10</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Leo</strong></td>
+            <td>週快報</td>
+            <td>4份/月</td>
+            <td><span class="badge badge-yellow">🟡 估計1-2份</span></td>
+            <td><strong>6.5/10</strong></td>
+          </tr>
+          <tr style="background:rgba(248,113,113,.05)">
+            <td><strong>Toxic</strong></td>
+            <td>Apify 腳本</td>
+            <td>今日截止</td>
+            <td><span class="badge badge-red">🔴 今日 Deadline</span></td>
+            <td><strong>待確認</strong></td>
+          </tr>
+          <tr style="background:rgba(248,113,113,.05)">
+            <td><strong>Toxic</strong></td>
+            <td>WhatsApp 系統</td>
+            <td>明日截止</td>
+            <td><span class="badge badge-red">🔴 明日 Deadline</span></td>
+            <td><strong>待確認</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Small</strong></td>
+            <td>6月策略 Brief</td>
+            <td>6/1 前</td>
+            <td><span class="badge badge-yellow">🟡 明天截止</span></td>
+            <td><strong>7/10</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Tony</strong></td>
+            <td>首次回覆時間</td>
+            <td>≤2小時</td>
+            <td><span class="badge badge-green">🟢 有腳本，執行中</span></td>
+            <td><strong>7.5/10</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="text-align:right; margin-top:10px; font-size:12px; color:var(--muted);">V1.0 系統整體健康度：<strong style="color:var(--yellow)">7.1 / 10</strong></div>
+  </div>
+
+  <!-- ══════════ PART 1: AGENT UPGRADES ══════════ -->
+  <div class="section">
+    <div class="section-title"><span class="label">PART 1</span> 全員升級 v2.0</div>
+
+    <div class="tab-nav" id="agentTabs">
+      <button class="tab-btn active" onclick="switchTab('amy')">Amy</button>
+      <button class="tab-btn" onclick="switchTab('anna')">Anna</button>
+      <button class="tab-btn" onclick="switchTab('leo')">Leo</button>
+      <button class="tab-btn" onclick="switchTab('toxic')">Toxic ⚠️</button>
+      <button class="tab-btn" onclick="switchTab('small')">Small</button>
+      <button class="tab-btn" onclick="switchTab('tony')">Tony</button>
+    </div>
+
+    <!-- AMY -->
+    <div class="tab-content active" id="tab-amy">
+      <div class="grid-2">
+        <div class="card">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">V1.0 成就確認</div>
+          <div class="gap-item"><div class="gap-num">✅</div><div class="gap-text">P0–P3 優先級系統已建立</div></div>
+          <div class="gap-item"><div class="gap-num">✅</div><div class="gap-text">多 Agent 協調 SOP 已定義</div></div>
+          <div class="gap-item"><div class="gap-num">✅</div><div class="gap-text">意圖確認機制已執行</div></div>
+        </div>
+        <div class="card card-accent">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">V2.0 新識別 Gap</div>
+          <div class="gap-item">
+            <div class="gap-num">1</div>
+            <div>
+              <div class="gap-text">新成員整合盲點——分流邏輯未包含 Rex + Mia</div>
+              <div class="gap-fix">→ 即時更新分流規則：廣告投放 → Rex / 數據分析 → Mia</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">2</div>
+            <div>
+              <div class="gap-text">跨線衝突裁定機制需動態調整</div>
+              <div class="gap-fix">→ 建立資源分配原則（起盤期痛症 60% / 成長期 50:50）</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">3</div>
+            <div>
+              <div class="gap-text">Stanley 不在線時代決授權未定義</div>
+              <div class="gap-fix">→ 金額 &lt;$500 / P0 緊急 → Amy 自主代決</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANNA -->
+    <div class="tab-content" id="tab-anna">
+      <div class="grid-2">
+        <div class="card">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">V2.0 新識別 Gap</div>
+          <div class="gap-item">
+            <div class="gap-num">1</div>
+            <div>
+              <div class="gap-text">爆款複製機制缺失</div>
+              <div class="gap-fix">→ ER&gt;10% 觸發爆款拆解 SOP：格式 / Hook / 情緒 / CTA</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">2</div>
+            <div>
+              <div class="gap-text">小紅書依然係盲點（v1.0 已識別但未改善）</div>
+              <div class="gap-fix">→ 本週必須出首條小紅書格式帖</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">3</div>
+            <div>
+              <div class="gap-text">與 Rex 廣告素材協作流程為零</div>
+              <div class="gap-fix">→ Rex 提 Brief → Anna 按廣告規格創作（A/B ×2套）</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">4</div>
+            <div>
+              <div class="gap-text">Reels 腳本化能力不足</div>
+              <div class="gap-fix">→ 建立 30–60 秒 Reels 標準腳本框架</div>
+            </div>
+          </div>
+        </div>
+        <div class="card card-accent">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">Reels 腳本框架（v2.0 新增）</div>
+          <div class="wf-box">0-3秒：<span class="hl">Hook</span>（問題/驚喜/反常識）
+3-15秒：衝突（點解呢個問題好大件事）
+15-45秒：解決方案（你嘅方法/見解）
+45-60秒：CTA（叫人私訊/留言/Follow）
+
+痛症線範例：
+  Hook：「你嘅腰痛，可能根本
+         唔係腰嘅問題」
+  衝突：「90%人都咁諗，所以
+         治療嗰年都唔斷尾」
+  解方：真相係 [具體原因]...
+  CTA：「私訊我免費評估」</div>
+          <div style="margin-top:14px;">
+            <div class="tag-row">
+              <span class="kpi-tag">帖數 ≥16條/月</span>
+              <span class="kpi-tag">Reels ×4條</span>
+              <span class="kpi-tag">小紅書 ≥2條</span>
+              <span class="kpi-tag">廣告素材 ≥2套</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEO -->
+    <div class="tab-content" id="tab-leo">
+      <div class="grid-2">
+        <div class="card">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">V2.0 新識別 Gap</div>
+          <div class="gap-item">
+            <div class="gap-num">1</div>
+            <div>
+              <div class="gap-text">業內爆款趨勢分析缺失（只追競品，唔追行業）</div>
+              <div class="gap-fix">→ 每月掃描 IG Explore 相關 hashtag，push 給 Anna</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">2</div>
+            <div>
+              <div class="gap-text">與 Mia 協作未定義（外部 vs 內部數據從未整合）</div>
+              <div class="gap-fix">→ 每月：Leo 外部 + Mia 內部 = 「我哋 vs 競品 vs 行業均值」</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">3</div>
+            <div>
+              <div class="gap-text">痛症線競品監測幾乎空白</div>
+              <div class="gap-fix">→ 本週立即建立 ≥3個痛症競品帳號基線</div>
+            </div>
+          </div>
+        </div>
+        <div class="card card-accent">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">雙軌監測系統 v2.0</div>
+          <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+            <div style="background:rgba(96,165,250,.08); border:1px solid rgba(96,165,250,.2); border-radius:10px; padding:12px;">
+              <div style="color:#60a5fa; font-weight:800; font-size:11px; margin-bottom:6px;">軌道 A — 競品監測</div>
+              美容線：每週一 · 痛症線：每週三（新增）<br>行業趨勢掃描：每月
+            </div>
+            <div style="background:rgba(52,211,153,.08); border:1px solid rgba(52,211,153,.2); border-radius:10px; padding:12px;">
+              <div style="color:#34d399; font-weight:800; font-size:11px; margin-bottom:6px;">軌道 B — 行業爆款趨勢（新增）</div>
+              每週掃描 IG Explore 相關 hashtag<br>記錄格式/Hook/ER → 直接 push 給 Anna
+            </div>
+          </div>
+          <div style="margin-top:14px;">
+            <div class="tag-row">
+              <span class="kpi-tag">週快報 ×8份/月</span>
+              <span class="kpi-tag">痛症競品 ≥3個</span>
+              <span class="kpi-tag">趨勢 push ≥2次/月</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOXIC -->
+    <div class="tab-content" id="tab-toxic">
+      <div class="alert-box alert-red" style="margin-bottom:16px;">
+        <div class="alert-icon">⚠️</div>
+        <div>
+          <div class="alert-title">Toxic — 最高優先處理（同 v1.0 評定一樣）</div>
+          <div class="alert-body">兩個硬 deadline 今明兩日到。先確認上線，再做 v2.0 升級。</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card card-red">
+          <div style="font-size:13px; font-weight:800; color:var(--red); margin-bottom:14px;">🔴 今日 (05-31) + 明日 (06-01) 緊急行動</div>
+          <div class="urgent-strip">
+            <div style="font-weight:700; font-size:13px;">今日：Apify 腳本確認上線</div>
+            <div style="color:var(--muted); font-size:12px;">已上線 → 向 Amy 確認 + 截圖 | 未上線 → 立即執行</div>
+          </div>
+          <div class="urgent-strip">
+            <div style="font-weight:700; font-size:13px;">明日：WhatsApp Business 最低可行版本上線</div>
+            <div style="color:var(--muted); font-size:12px;">歡迎訊息 + 2個分流選項（美容/痛症）唔需要完美，有用就得</div>
+          </div>
+        </div>
+        <div class="card card-accent">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">V2.0 新增任務（緊急處理後）</div>
+          <div class="gap-item">
+            <div class="gap-num">1</div>
+            <div>
+              <div class="gap-text">Meta Ads 自動規則（配合 Rex）</div>
+              <div class="gap-fix">CPC&gt;$5 連3日 → 暫停 · ER&gt;3% → 自動+20%預算</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">2</div>
+            <div>
+              <div class="gap-text">內容排程自動化（Meta Business Suite）</div>
+              <div class="gap-fix">→ 2026-06-07 上線</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">3</div>
+            <div>
+              <div class="gap-text">WhatsApp → Notion 同步方案</div>
+              <div class="gap-fix">→ 先手動，50+ leads 後考慮 Zapier</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SMALL -->
+    <div class="tab-content" id="tab-small">
+      <div class="grid-2">
+        <div class="card card-yellow">
+          <div style="font-size:13px; font-weight:800; color:var(--yellow); margin-bottom:14px;">⚡ 即時輸出：6月份策略 Brief</div>
+          <div class="wf-box">痛症線：從「起盤」到「首批成交」
+  核心任務：100 followers → 首3個成交
+  行動：局內人系列×3 + 一對一諮詢優惠
+
+美容線：維持 + 引入廣告測試
+  核心任務：首個廣告測試（$500 預算）
+  行動：Anna出素材 → Rex跑測試廣告
+
+<span class="hl3">⚠️ 本月最大風險：</span>
+  1. Toxic 系統 deadline 在本週
+  2. 內容產出 vs 跟進回覆資源衝突
+
+資源分配：
+  痛症線 70% · 美容線 30%</div>
+        </div>
+        <div class="card card-accent">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">V2.0 新增能力</div>
+          <div class="gap-item">
+            <div class="gap-num">1</div>
+            <div>
+              <div class="gap-text">主動盲點提示（每月≥1個 Stanley 未意識到的風險）</div>
+              <div class="gap-fix">→ 唔係等問才講，主動出 Warning</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">2</div>
+            <div>
+              <div class="gap-text">雙線資源分配原則清晰化</div>
+              <div class="gap-fix">起盤期 70:30 → 成長期 50:50 → 成熟期按數據</div>
+            </div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-num">3</div>
+            <div>
+              <div class="gap-text">新成員（Rex+Mia）整合進策略框架</div>
+              <div class="gap-fix">每份 Brief 含廣告預算建議 + 數據 KPI 目標</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TONY -->
+    <div class="tab-content" id="tab-tony">
+      <div class="grid-2">
+        <div class="card">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">痛症線專用腳本（v2.0 新增）</div>
+          <div class="wf-box"><span class="hl">初次接觸——痛症版：</span>
+「[名字] 你好！唔係講廢話，
+ 你係邊個位痛、痛咗幾耐？
+ 我幫你睇下方向係咪對」
+（唔賣嘢，問問題，建立專業感）
+
+<span class="hl">跟進——痛症版：</span>
+「你之前提到 [具體痛症位置]，
+ 根據我了解，呢類通常係 [分析]。
+ 15分鐘 WhatsApp 免費評估，
+ 幫你判斷方向係咪正確，
+ 幾時方便？」</div>
+        </div>
+        <div class="card card-accent">
+          <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:14px;">成效追蹤 SOP（v2.0 新增）</div>
+          <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+            <div style="background:var(--card2); border-radius:8px; padding:10px 12px;">
+              <span style="color:var(--accent); font-weight:700;">3日後：</span>「做完有咩感覺？任何不適要告知」
+            </div>
+            <div style="background:var(--card2); border-radius:8px; padding:10px 12px;">
+              <span style="color:var(--accent); font-weight:700;">7日後：</span>「一週啦！打個分 0–10」
+            </div>
+            <div style="background:var(--card2); border-radius:8px; padding:10px 12px;">
+              <span style="color:var(--accent); font-weight:700;">21日後：</span>「三週評估 + 下一步建議」
+            </div>
+            <div style="background:var(--card2); border-radius:8px; padding:10px 12px;">
+              <span style="color:var(--accent); font-weight:700;">7分以上：</span>請求 Testimonial
+            </div>
+            <div style="background:var(--card2); border-radius:8px; padding:10px 12px;">
+              <span style="color:var(--green); font-weight:700;">9分以上：</span>邀請拍短片 → Anna 做成功案例帖
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PART 2: NEW AGENTS ══════════ -->
+  <div class="section">
+    <div class="section-title"><span class="label">PART 2</span> 新成員入職</div>
+    <div class="grid-2">
+
+      <!-- REX -->
+      <div class="card card-green">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:20px;">
+          <div class="agent-avatar" style="background:rgba(52,211,153,.15); color:#34d399; font-size:24px;">📢</div>
+          <div>
+            <div style="font-size:20px; font-weight:900;">Rex</div>
+            <div style="font-size:12px; color:var(--muted);">廣告投放專員 · Meta Ads Manager</div>
+            <span class="badge badge-green" style="margin-top:6px;">新成員</span>
+          </div>
+        </div>
+        <div class="wf-box">Pre-Launch：
+  ① 與 Small 確認廣告目標
+  ② 與 Anna 確認素材規格
+  ③ 受眾設定（美容/痛症各一套）
+  ④ 預算：測試 $50-100/日
+
+Launch → Monitoring（72小時學習期）：
+  <span class="hl2">CTR 目標：&gt;1.5%</span>
+  <span class="hl2">CPL 目標：&lt;$30 HKD</span>
+  <span class="hl2">ROAS 目標：&gt;3</span>
+
+Optimization：
+  72小時後暫停低表現版本
+  7日內 CPL +30% → 換素材/受眾</div>
+        <div style="margin-top:14px;">
+          <div class="tag-row">
+            <span class="kpi-tag">首廣告上線 ≤06-10</span>
+            <span class="kpi-tag">CPL &lt;$30</span>
+            <span class="kpi-tag">A/B 報告 2份/月</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MIA -->
+      <div class="card card-green">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:20px;">
+          <div class="agent-avatar" style="background:rgba(96,165,250,.15); color:#60a5fa; font-size:24px;">📊</div>
+          <div>
+            <div style="font-size:20px; font-weight:900;">Mia</div>
+            <div style="font-size:12px; color:var(--muted);">數據追蹤師 · 內部業績分析</div>
+            <span class="badge badge-blue" style="margin-top:6px;">新成員</span>
+          </div>
+        </div>
+        <div class="wf-box">數據收集（每週）：
+  IG 有機數據（Instagram Insights）
+  廣告數據（Rex 提供）
+  客戶轉化（Tony 提供）
+
+漏斗分析（每月）：
+  觸及 → 關注 → 私訊 → 諮詢 → 成交
+  找出哪個環節最漏
+
+洞察輸出：
+  → Anna：哪類內容 ER 最高
+  → Rex：廣告 CPL 偏高原因
+  → Tony：諮詢轉化率偏低分析
+  → Small：整體漏斗健康度</div>
+        <div style="margin-top:14px;">
+          <div class="tag-row">
+            <span class="kpi-tag">追蹤系統 ≤06-07</span>
+            <span class="kpi-tag">漏斗報告 每月15號</span>
+            <span class="kpi-tag">洞察採用率 ≥50%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PART 3: COLLAB MATRIX ══════════ -->
+  <div class="section">
+    <div class="section-title"><span class="label">PART 3</span> 跨 Agent 協作矩陣 v2.0（8人版）</div>
+    <div class="card">
+      <div class="collab-row" style="padding-top:0;">
+        <div style="color:var(--muted); font-size:11px; font-weight:800; min-width:90px;">發出方</div>
+        <div class="collab-arrow"> </div>
+        <div style="color:var(--muted); font-size:11px; font-weight:800; min-width:90px;">接收方</div>
+        <div style="color:var(--muted); font-size:11px; font-weight:800; flex:1;">協作內容</div>
+        <div style="color:var(--muted); font-size:11px; font-weight:800; white-space:nowrap;">觸發條件</div>
+      </div>
+      <div class="collab-row"><div class="collab-from" style="color:#f472b6;">Leo</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#fb923c;">Anna</div><div class="collab-desc">競品爆款格式推送</div><div class="collab-trigger">發現 ER &gt; 10%</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#f472b6;">Leo</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#60a5fa;">Mia</div><div class="collab-desc">競品數據供對比</div><div class="collab-trigger">每週報告</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#a78bfa;">Toxic</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#fbbf24;">Tony</div><div class="collab-desc">Lead 交接資訊包</div><div class="collab-trigger">用戶確認有興趣</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#a78bfa;">Toxic</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#34d399;">Rex</div><div class="collab-desc">廣告自動規則設定</div><div class="collab-trigger">Rex 廣告上線後</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#34d399;">Small</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#fb923c;">Anna</div><div class="collab-desc">月度內容策略 Brief</div><div class="collab-trigger">每月1號</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#fbbf24;">Tony</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#34d399;">Small</div><div class="collab-desc">客戶洞察摘要回流</div><div class="collab-trigger">每週五</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#fbbf24;">Tony</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#60a5fa;">Mia</div><div class="collab-desc">諮詢/成交轉化數字</div><div class="collab-trigger">每週</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#34d399;">Rex</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#60a5fa;">Mia</div><div class="collab-desc">CPL / CTR / ROAS 數據</div><div class="collab-trigger">每週</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#60a5fa;">Mia</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#34d399;">Small</div><div class="collab-desc">漏斗診斷報告</div><div class="collab-trigger">每月15號</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#60a5fa;">Mia</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#fb923c;">Anna</div><div class="collab-desc">哪類內容 ER 最高</div><div class="collab-trigger">每月</div></div>
+      <div class="collab-row"><div class="collab-from" style="color:#60a5fa;">Mia</div><div class="collab-arrow">→</div><div class="collab-to" style="color:#34d399;">Rex</div><div class="collab-desc">廣告 CPL 偏高建議</div><div class="collab-trigger">每週</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════ PART 4: PRESS TEST ══════════ -->
+  <div class="section">
+    <div class="section-title"><span class="label">PART 4</span> 壓力測試 v2.0 — 雙線同時爆紅</div>
+
+    <div class="card card-accent" style="margin-bottom:16px;">
+      <div style="font-size:13px; color:var(--muted); margin-bottom:12px;">場景假設</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px; background:rgba(244,114,182,.08); border:1px solid rgba(244,114,182,.2); border-radius:10px; padding:14px;">
+          <div style="color:#f472b6; font-weight:800; margin-bottom:6px;">美容線廣告大爆</div>
+          Rex 廣告 CPL 跌至 $15（目標 $30）<br>
+          <span style="font-size:12px; color:var(--muted);">需要即時加預算</span>
+        </div>
+        <div style="flex:1; min-width:200px; background:rgba(124,111,247,.08); border:1px solid rgba(124,111,247,.2); border-radius:10px; padding:14px;">
+          <div style="color:var(--accent); font-weight:800; margin-bottom:6px;">痛症 IG 同時爆紅</div>
+          局內人系列帖子 ER 22%<br>
+          <span style="font-size:12px; color:var(--muted);">大量陌生人私訊</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:13px; font-weight:800; color:var(--muted); letter-spacing:1px; margin-bottom:16px;">升級前 vs 升級後對比</div>
+      <div class="test-result" style="padding-top:0;">
+        <div class="test-label" style="font-weight:700; color:var(--muted); font-size:11px;">環節</div>
+        <div class="test-before" style="font-size:11px; font-weight:700;">v1.0</div>
+        <div class="test-after" style="font-size:11px; font-weight:700;">v2.0</div>
+        <div class="test-stars" style="font-size:11px; font-weight:700;">升級</div>
+      </div>
+      <div class="test-result">
+        <div class="test-label">廣告即時優化</div>
+        <div class="test-before">無 Rex，需手動</div>
+        <div class="test-after">Rex + Toxic 自動規則</div>
+        <div class="test-stars">⭐⭐⭐⭐⭐</div>
+      </div>
+      <div class="test-result">
+        <div class="test-label">雙線資源裁定</div>
+        <div class="test-before">Amy 無依據判斷</div>
+        <div class="test-after">有優先規則 + Small Brief</div>
+        <div class="test-stars">⭐⭐⭐⭐</div>
+      </div>
+      <div class="test-result">
+        <div class="test-label">數據即時可見</div>
+        <div class="test-before">靠 Leo 競品報告</div>
+        <div class="test-after">Mia 即時漏斗數據</div>
+        <div class="test-stars">⭐⭐⭐⭐⭐</div>
+      </div>
+      <div class="test-result">
+        <div class="test-label">大量 Lead 湧入</div>
+        <div class="test-before">Tony 一個人應付</div>
+        <div class="test-after">Toxic 自動分流 + Tony 腳本化</div>
+        <div class="test-stars">⭐⭐⭐⭐</div>
+      </div>
+      <div class="test-result">
+        <div class="test-label">爆款事件存檔</div>
+        <div class="test-before">無機制</div>
+        <div class="test-after">Leo + Mia 聯合存檔</div>
+        <div class="test-stars">⭐⭐⭐⭐</div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:14px;">
+      <span class="badge badge-green" style="font-size:14px; padding:8px 24px;">壓力測試 v2.0：PASS ✅</span>
+    </div>
+  </div>
+
+  <!-- ══════════ PART 5: SCORES ══════════ -->
+  <div class="section">
+    <div class="section-title"><span class="label">PART 5</span> 全員評分（升級對比）</div>
+    <div class="score-summary">
+      <div class="score-card">
+        <div class="agent-n">Amy</div>
+        <div class="v1" style="color:var(--muted);">v1.0: 9.0</div>
+        <div class="v2" style="color:var(--purple);">9.5</div>
+        <div class="delta delta-up">↑ +0.5</div>
+      </div>
+      <div class="score-card">
+        <div class="agent-n">Anna</div>
+        <div class="v1">v1.0: 8.5</div>
+        <div class="v2" style="color:var(--orange);">9.0</div>
+        <div class="delta delta-up">↑ +0.5</div>
+      </div>
+      <div class="score-card">
+        <div class="agent-n">Leo</div>
+        <div class="v1">v1.0: 8.0</div>
+        <div class="v2" style="color:var(--blue);">8.5</div>
+        <div class="delta delta-up">↑ +0.5</div>
+      </div>
+      <div class="score-card" style="border-color:rgba(251,191,36,.3)">
+        <div class="agent-n">Toxic</div>
+        <div class="v1">v1.0: 7.5</div>
+        <div class="v2" style="color:var(--yellow);">8.0</div>
+        <div class="delta delta-up">↑ +0.5 (系統上線後)</div>
+      </div>
+      <div class="score-card">
+        <div class="agent-n">Small</div>
+        <div class="v1">v1.0: 9.0</div>
+        <div class="v2" style="color:var(--green);">9.5</div>
+        <div class="delta delta-up">↑ +0.5</div>
+      </div>
+      <div class="score-card">
+        <div class="agent-n">Tony</div>
+        <div class="v1">v1.0: 8.5</div>
+        <div class="v2" style="color:var(--accent2);">9.0</div>
+        <div class="delta delta-up">↑ +0.5</div>
+      </div>
+      <div class="score-card" style="border-color:rgba(52,211,153,.3)">
+        <div class="agent-n">Rex 🆕</div>
+        <div class="v1">v1.0: N/A</div>
+        <div class="v2" style="color:var(--green);">7.5</div>
+        <div class="delta delta-new">新入職</div>
+      </div>
+      <div class="score-card" style="border-color:rgba(96,165,250,.3)">
+        <div class="agent-n">Mia 🆕</div>
+        <div class="v1">v1.0: N/A</div>
+        <div class="v2" style="color:var(--blue);">7.5</div>
+        <div class="delta delta-new">新入職</div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:24px; padding:20px; background:var(--card); border:1px solid var(--border); border-radius:14px;">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">整體系統評分</div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:24px; flex-wrap:wrap;">
+        <div><div style="font-size:12px; color:var(--muted);">v1.0</div><div style="font-size:32px; font-weight:900; color:var(--yellow);">8.4</div></div>
+        <div style="font-size:24px; color:var(--muted);">→</div>
+        <div><div style="font-size:12px; color:var(--muted);">v2.0</div><div style="font-size:44px; font-weight:900; color:var(--green);">9.0</div></div>
+        <div style="background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.3); border-radius:10px; padding:12px 20px;">
+          <div style="color:#34d399; font-size:24px; font-weight:900;">+0.6 ⭐</div>
+          <div style="font-size:11px; color:var(--muted);">系統升級幅度</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ ACTION TIMELINE ══════════ -->
+  <div class="section">
+    <div class="section-title"><span class="label">即時行動</span> 優先執行清單</div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot" style="background:rgba(248,113,113,.2); border:2px solid var(--red); color:var(--red);">🔴</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-date" style="color:var(--red);">今日 — 2026-05-31</div>
+          <div class="tl-tasks">
+            <div class="tl-task"><span class="who" style="background:rgba(167,139,250,.15); color:#c4b5fd;">Toxic</span> 確認 Apify 腳本上線狀態（今日截止！）</div>
+            <div class="tl-task"><span class="who" style="background:rgba(52,211,153,.15); color:#6ee7b7;">Small</span> 起草 6月份策略 Brief 初稿</div>
+            <div class="tl-task"><span class="who" style="background:rgba(124,111,247,.15); color:#b8b0fc;">Amy</span> 更新分流規則加入 Rex + Mia</div>
+          </div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot" style="background:rgba(248,113,113,.2); border:2px solid var(--red); color:var(--red);">🔴</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-date" style="color:var(--red);">明日 — 2026-06-01</div>
+          <div class="tl-tasks">
+            <div class="tl-task"><span class="who" style="background:rgba(167,139,250,.15); color:#c4b5fd;">Toxic</span> WhatsApp Business 系統最低可行版本必須上線</div>
+            <div class="tl-task"><span class="who" style="background:rgba(52,211,153,.15); color:#6ee7b7;">Small</span> 6月份策略 Brief 完成交付</div>
+            <div class="tl-task"><span class="who" style="background:rgba(52,211,153,.15); color:#34d399;">Rex</span> 建立 Meta Business Suite 帳號</div>
+          </div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot" style="background:rgba(251,191,36,.2); border:2px solid var(--yellow); color:var(--yellow);">🟡</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-date" style="color:var(--yellow);">本週內 — before 2026-06-07</div>
+          <div class="tl-tasks">
+            <div class="tl-task"><span class="who" style="background:rgba(244,114,182,.15); color:#f9a8d4;">Leo</span> 建立痛症競品監測清單（≥3個帳號基線）</div>
+            <div class="tl-task"><span class="who" style="background:rgba(52,211,153,.15); color:#34d399;">Rex</span> 設計首個美容線廣告測試方案</div>
+            <div class="tl-task"><span class="who" style="background:rgba(251,146,60,.15); color:#fed7aa;">Anna</span> 出首條小紅書格式帖</div>
+            <div class="tl-task"><span class="who" style="background:rgba(96,165,250,.15); color:#93c5fd;">Mia</span> 建立數據追蹤表格（Google Sheet）</div>
+            <div class="tl-task"><span class="who" style="background:rgba(251,191,36,.15); color:#fde68a;">Tony</span> 確認客戶洞察摘要模板，本週五提交第一份</div>
+          </div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot" style="background:rgba(52,211,153,.2); border:2px solid var(--green); color:var(--green);">🟢</div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-date" style="color:var(--green);">本月內 — before 2026-06-30</div>
+          <div class="tl-tasks">
+            <div class="tl-task"><span class="who" style="background:rgba(52,211,153,.15); color:#34d399;">Rex</span> 首個廣告測試完成 + 報告</div>
+            <div class="tl-task"><span class="who" style="background:rgba(96,165,250,.15); color:#93c5fd;">Mia</span> 首份漏斗診斷報告（6月15號）</div>
+            <div class="tl-task"><span class="who" style="background:rgba(167,139,250,.15); color:#c4b5fd;">Toxic</span> 內容排程自動化上線（06-07）</div>
+            <div class="tl-task"><span class="who" style="background:rgba(251,146,60,.15); color:#fed7aa;">Anna</span> 首個 Reels 腳本完成並發布</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ NEXT TRAINING ══════════ -->
+  <div class="section">
+    <div class="card" style="text-align:center; padding:32px;">
+      <div style="font-size:12px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:10px;">下次大培訓</div>
+      <div style="font-size:36px; font-weight:900; color:var(--accent); margin-bottom:8px;">2026-07-01</div>
+      <div style="font-size:13px; color:var(--muted); max-width:500px; margin:0 auto;">
+        評估重點：Rex 首個廣告 ROI · Mia 漏斗診斷 · Toxic 系統穩定性 · 痛症 IG 30日成果 · 8-Agent 協作實際情況
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  全員大培訓 v2.0 &nbsp;·&nbsp; 主持：Amy &nbsp;·&nbsp; 新成員：Rex、Mia &nbsp;·&nbsp; 2026-05-31<br>
+  Stanley Team — 美容線 + 痛症線 雙線業務
+</div>
+
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

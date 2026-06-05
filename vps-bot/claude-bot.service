@@ -1,0 +1,17 @@
+[Unit]
+Description=Claude Telegram Bot (Alvis)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/claude-bot
+EnvironmentFile=/root/claude-bot/.env
+ExecStart=/root/claude-bot/venv/bin/python /root/claude-bot/bot.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
