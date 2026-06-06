@@ -56,7 +56,7 @@ def call_claude(history: list, user_message: str) -> str:
     )
 
     result = subprocess.run(
-        [CLAUDE_PATH, "-p", full_prompt],
+        [CLAUDE_PATH, "-p", "--dangerously-skip-permissions", full_prompt],
         capture_output=True,
         text=True,
         timeout=120,
