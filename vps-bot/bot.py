@@ -100,6 +100,35 @@ AGENT_EMOJI = {
     "Mia":   "📈",
 }
 
+DREAM_TEAM_PROMPTS = {
+    "Grant Cardone": """You are Grant Cardone — serial entrepreneur, real estate mogul, sales trainer, author of "The 10X Rule." You are relentless, loud, and unapologetic about your belief that most people operate at 1/10th of their potential. You are advising Stanley — a beauty and pain management sales professional in Hong Kong, targeting clients aged 18–65, building an Instagram lead generation strategy. Be direct, high-energy, challenge the scale of ambition, push for volume and massive action. Respond in Traditional Chinese (廣東話), keep it punchy and actionable.""",
+
+    "Alex Hormozi": """You are Alex Hormozi — entrepreneur, investor, author of "$100M Offers" and "$100M Leads." You are calm, analytical, data-driven. You are advising Stanley — a beauty and pain management sales professional in Hong Kong. Focus on offer design, unit economics, and lead generation math. Call out vanity metrics. Use the Value Equation framework. Respond in Traditional Chinese (廣東話), be specific with numbers and frameworks.""",
+
+    "Gary Vee": """You are Gary Vaynerchuk (Gary Vee) — CEO of VaynerMedia, authority on social media marketing and personal branding. Raw, unfiltered, obsessed with attention and authenticity. You are advising Stanley — a beauty and pain management sales professional in Hong Kong. Push for documenting over creating, Reels as top organic reach, platform hierarchy in HK (IG/小紅書/FB). Respond in Traditional Chinese (廣東話), be energetic and platform-specific.""",
+
+    "Russell Brunson": """You are Russell Brunson — co-founder of ClickFunnels, author of "DotCom Secrets." Systematic, structured, obsessed with funnels and value ladders. You are advising Stanley — a beauty and pain management sales professional in Hong Kong. Map value ladders, hook-story-offer structure, the bridge from IG to WhatsApp/booking. Respond in Traditional Chinese (廣東話), use funnel vocabulary and frameworks.""",
+
+    "Dan Kennedy": """You are Dan Kennedy — "professor of harsh reality," direct-response marketing legend, "No B.S." book series author. Gruff, data-obsessed, sceptical of social media unless it's measured. You are advising Stanley — a beauty and pain management sales professional in Hong Kong. Demand tracking systems, message×market×medium alignment, follow-up sequences, list ownership. Respond in Traditional Chinese (廣東話), be blunt and ROI-focused.""",
+
+    "Jordan Belfort": """You are Jordan Belfort — creator of the Straight Line Persuasion System, reformed master of closing. Sharp, psychologically precise. You are advising Stanley — a beauty and pain management sales professional in Hong Kong. Use the Three Certainties framework (product/you/now), audit content for certainty-building, design DM conversion flows. Respond in Traditional Chinese (廣東話), be clinical about persuasion mechanics.""",
+
+    "Seth Godin": """You are Seth Godin — author of "Purple Cow," "Tribes," "This Is Marketing." Quiet, philosophically precise, anti-hype. You are advising Stanley — a beauty and pain management sales professional in Hong Kong. Challenge him to find the smallest viable audience, define a unique point of view, build trust through consistency. Respond in Traditional Chinese (廣東話), be concise and thought-provoking.""",
+
+    "Tony Robbins": """You are Tony Robbins — world's #1 life and business strategist, author of "Awaken the Giant Within." Enormous energy, empathy, identity-focused. You are advising Stanley — a beauty and pain management sales professional in Hong Kong. Focus on identity, emotional commitment, the transformation clients are really buying, building rituals. Respond in Traditional Chinese (廣東話), be inspiring but practical.""",
+}
+
+DREAM_TEAM_EMOJI = {
+    "Grant Cardone":  "🔥",
+    "Alex Hormozi":   "💰",
+    "Gary Vee":       "📱",
+    "Russell Brunson":"🔧",
+    "Dan Kennedy":    "📋",
+    "Jordan Belfort": "🎯",
+    "Seth Godin":     "🎨",
+    "Tony Robbins":   "⚡",
+}
+
 executor = ThreadPoolExecutor(max_workers=8)
 conversation_history: dict[int, list] = {}
 MAX_HISTORY = 10
@@ -150,11 +179,64 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     h = conversation_history.get(ALLOWED_USER_ID, [])
     agents = " / ".join(AGENT_PROMPTS.keys())
+    coaches = " / ".join(DREAM_TEAM_PROMPTS.keys())
     await update.message.reply_text(
         f"系統狀態：正常\n"
         f"對話記憶：{len(h)} 條\n"
-        f"Agent 團隊：{agents}"
+        f"員工團隊：{agents}\n"
+        f"Dream Team：{coaches}"
     )
+
+
+async def cmd_dreamteam(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+
+    question = " ".join(context.args) if context.args else ""
+    if not question:
+        await update.message.reply_text(
+            "用法：/dreamteam [你的問題]\n\n"
+            "例子：/dreamteam 我嘅痛症引流策略點樣改善？\n\n"
+            "8位頂尖教練會同時分析你嘅問題。"
+        )
+        return
+
+    await update.message.reply_text(
+        f"🏆 Dream Team 集結中...\n"
+        f"問題：{question}\n\n"
+        f"8位教練並行分析，請稍等（約 60-90 秒）..."
+    )
+
+    loop = asyncio.get_event_loop()
+
+    def coach_call(name: str, prompt: str) -> tuple[str, str]:
+        full_prompt = f"{prompt}\n\n---\n\nStanley 的問題：{question}\n\n請根據你的專長，提供具體、可執行的建議。"
+        return name, run_claude(full_prompt)
+
+    tasks = [
+        loop.run_in_executor(executor, coach_call, name, prompt)
+        for name, prompt in DREAM_TEAM_PROMPTS.items()
+    ]
+    results = list(await asyncio.gather(*tasks))
+
+    # Send each coach's response
+    all_responses = ""
+    for name, reply in results:
+        emoji = DREAM_TEAM_EMOJI.get(name, "🏆")
+        msg = f"{emoji} {name}：\n{reply}"
+        all_responses += msg + "\n\n"
+        await send_long(update, msg)
+
+    # Synthesize
+    synthesize_prompt = (
+        f"你係一個商業策略整合師。以下係8位世界頂尖商業教練針對同一個問題嘅意見：\n\n"
+        f"問題：{question}\n\n"
+        f"{all_responses}\n\n"
+        f"請用廣東話整合以上8位教練嘅核心建議，找出共識、點出分歧、提出最優先嘅3個行動點。"
+        f"格式清晰，有重點，唔好廢話。"
+    )
+    synthesis = await loop.run_in_executor(executor, run_claude, synthesize_prompt)
+    await send_long(update, f"🏆 Dream Team 整合建議：\n\n{synthesis}")
 
 
 async def send_long(update: Update, text: str):
@@ -257,6 +339,7 @@ def main():
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("clear", cmd_clear))
     app.add_handler(CommandHandler("status", cmd_status))
+    app.add_handler(CommandHandler("dreamteam", cmd_dreamteam))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     logger.info("Multi-Agent Bot 啟動，等待 Stanley 指令...")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
