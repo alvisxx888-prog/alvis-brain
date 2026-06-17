@@ -677,47 +677,63 @@ def rss_industry_news() -> str:
 # ── Apify scraping ─────────────────────────────────────────────────────────────
 
 def scrape_instagram(username: str, max_posts: int = 12) -> str:
-    # IG uses Instaloader only; no Apify fallback for Instagram.
     username = username.lstrip("@").strip()
-    if not INSTALOADER_AVAILABLE:
-        fallback = web_search(f"Instagram {username} 最新帖文 內容", 6)
-        return (
-            "Instaloader 未安裝，無法直接抓 IG profile。\n\n"
-            "以下係網絡搜尋 fallback，唔係直接由 IG profile 抓出嚟，準確度會低啲：\n\n"
-            f"{fallback}"
-        )
 
-    try:
-        L = instaloader.Instaloader(
-            quiet=True,
-            download_pictures=False,
-            download_videos=False,
-            download_video_thumbnails=False,
-            download_geotags=False,
-            download_comments=False,
-            save_metadata=False,
-        )
-        profile = instaloader.Profile.from_username(L.context, username)
-        follower_count = profile.followers
-        output = f"📊 @{username}（{follower_count:,} followers）最新 {max_posts} 帖：\n來源：Instaloader public scrape\n\n"
-        for i, post in enumerate(profile.get_posts()):
-            if i >= max_posts:
-                break
-            likes = post.likes
-            comments = post.comments
-            caption = (post.caption or "（無文字）")[:150]
-            ts = post.date_local.strftime("%Y-%m-%d")
-            output += f"{i+1}. [{ts}] 👍{likes} 💬{comments}\n{caption}\n\n"
-        return output.strip()
-    except Exception as e:
-        logger.warning(f"Instaloader IG scrape error: {e}; using web search fallback")
-        fallback = web_search(f"Instagram {username} 最新帖文 內容", 6)
-        return (
-            f"Instaloader 抓唔到 @{username}，可能係 IG 限制公開讀取、帳號私人/不存在、login required、rate limit 或網絡問題。\n"
-            f"錯誤：{e}\n\n"
-            "以下係網絡搜尋 fallback，唔係直接由 IG profile 抓出嚟，準確度會低啲：\n\n"
-            f"{fallback}"
-        )
+    # ── 主力：Apify Instagram Scraper（最可靠）──────────────────────────────
+    if APIFY_AVAILABLE and APIFY_TOKEN:
+        try:
+            client = ApifyClient(APIFY_TOKEN)
+            run_input = {
+                "directUrls": [f"https://www.instagram.com/{username}/"],
+                "resultsType": "posts",
+                "resultsLimit": max_posts,
+                "addParentData": False,
+            }
+            run = client.actor("apify/instagram-scraper").call(run_input=run_input, timeout_secs=120)
+            dataset_id = getattr(run, "default_dataset_id", None) or run.get("defaultDatasetId")
+            items = list(client.dataset(dataset_id).iterate_items()) if dataset_id else []
+            if items:
+                # Try to get profile info from first item
+                first = items[0]
+                owner = first.get("ownerUsername") or username
+                followers = first.get("followersCount") or "?"
+                output = f"📊 @{owner}（{followers} followers）最新 {len(items)} 帖：\n來源：Apify IG Scraper\n\n"
+                for i, item in enumerate(items[:max_posts], 1):
+                    likes = item.get("likesCount") or 0
+                    comments = item.get("commentsCount") or 0
+                    caption = (item.get("caption") or "（無文字）")[:200]
+                    ts = (item.get("timestamp") or "")[:10]
+                    output += f"{i}. [{ts}] 👍{likes} 💬{comments}\n{caption}\n\n"
+                return output.strip()
+        except Exception as e:
+            logger.warning(f"Apify IG scrape error: {e}; trying Instaloader")
+
+    # ── Fallback 1：Instaloader ─────────────────────────────────────────────
+    if INSTALOADER_AVAILABLE:
+        try:
+            L = instaloader.Instaloader(
+                quiet=True, download_pictures=False, download_videos=False,
+                download_video_thumbnails=False, download_geotags=False,
+                download_comments=False, save_metadata=False,
+            )
+            profile = instaloader.Profile.from_username(L.context, username)
+            output = f"📊 @{username}（{profile.followers:,} followers）最新 {max_posts} 帖：\n來源：Instaloader\n\n"
+            for i, post in enumerate(profile.get_posts()):
+                if i >= max_posts:
+                    break
+                caption = (post.caption or "（無文字）")[:150]
+                ts = post.date_local.strftime("%Y-%m-%d")
+                output += f"{i+1}. [{ts}] 👍{post.likes} 💬{post.comments}\n{caption}\n\n"
+            return output.strip()
+        except Exception as e:
+            logger.warning(f"Instaloader error: {e}; using web search fallback")
+
+    # ── Fallback 2：DuckDuckGo 搜尋 ────────────────────────────────────────
+    fallback = web_search(f"Instagram {username} 最新帖文 內容 2024 2025", 6)
+    return (
+        f"⚠️ 無法直接抓取 @{username} IG（Apify 及 Instaloader 均失敗）。\n"
+        f"以下係網絡搜尋 fallback（準確度較低）：\n\n{fallback}"
+    )
 
 def scrape_facebook(page_name: str, max_posts: int = 10) -> str:
     if not FACEBOOK_SCRAPER_AVAILABLE:
