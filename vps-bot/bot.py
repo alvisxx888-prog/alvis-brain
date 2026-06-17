@@ -424,6 +424,7 @@ MAX_HISTORY = 20
 last_content: dict[int, str] = load_last_content()  # 持久化，重啟後仍保留
 follow_up_state: dict[int, dict] = {}   # {user_id: {"agent": "Leo", "context": "...", "active": True}}
 agent_outputs: dict[int, dict] = load_agent_outputs()  # 持久化，重啟後仍保留
+dreamteam_last_synthesis: dict[int, dict] = {}  # {user_id: {"question":..,"synthesis":..,"responses":..}}
 
 REPORT_BUFFER_FILE = "/root/claude-bot/report_buffer.json"
 pending_report_entry: dict[int, dict] = {}  # {user_id: {"agent":..,"question":..,"answer":..}}
@@ -477,6 +478,55 @@ def web_search(query: str, max_results: int = 5) -> str:
             logger.warning(f"Web search attempt {attempt+1} error: {e}")
         _time.sleep(2)
     return "無搜尋結果"
+
+
+# ── Google News RSS（免費、實時、唔需要任何 token）──────────────────────────────
+
+def fetch_rss_news(feed_url: str, max_items: int = 5) -> str:
+    try:
+        import xml.etree.ElementTree as ET
+        req = urllib.request.Request(feed_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = resp.read().decode("utf-8", errors="replace")
+        root = ET.fromstring(data)
+        items = root.findall(".//item")[:max_items]
+        if not items:
+            return ""
+        out = ""
+        for item in items:
+            title = (item.findtext("title") or "").strip()
+            desc = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:200]
+            link = (item.findtext("link") or "").strip()
+            out += f"【{title}】\n{desc}\n來源：{link}\n\n"
+        return out.strip()
+    except Exception as e:
+        logger.warning(f"RSS fetch error ({feed_url[:60]}): {e}")
+        return ""
+
+
+def rss_hk_news() -> str:
+    feeds = [
+        "https://news.google.com/rss/search?q=%E9%A6%99%E6%B8%AF+%E6%96%B0%E8%81%9E&hl=zh-HK&gl=HK&ceid=HK:zh-Hant",
+        "https://news.google.com/rss/search?q=%E9%A6%99%E6%B8%AF+%E8%B2%A1%E7%B6%93&hl=zh-HK&gl=HK&ceid=HK:zh-Hant",
+    ]
+    parts = [r for f in feeds if (r := fetch_rss_news(f, 5))]
+    return "\n\n".join(parts)
+
+
+def rss_ai_news() -> str:
+    feeds = [
+        "https://news.google.com/rss/search?q=Claude+ChatGPT+Gemini+AI+update&hl=en-US&gl=US&ceid=US:en",
+    ]
+    parts = [r for f in feeds if (r := fetch_rss_news(f, 5))]
+    return "\n\n".join(parts)
+
+
+def rss_industry_news() -> str:
+    feeds = [
+        "https://news.google.com/rss/search?q=%E9%A6%99%E6%B8%AF+%E7%BE%8E%E5%AE%B9+%E7%97%9B%E7%97%87&hl=zh-HK&gl=HK&ceid=HK:zh-Hant",
+    ]
+    parts = [r for f in feeds if (r := fetch_rss_news(f, 4))]
+    return "\n\n".join(parts)
 
 
 # ── Apify scraping ─────────────────────────────────────────────────────────────
@@ -1029,7 +1079,10 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/xhs [關鍵詞] → 小紅書帖文抓取\n"
         "/research [關鍵詞] → Google 情報搜尋\n"
         "/report → 即時市場 + AI 情報\n"
-        "/dreamteam [問題] → 8位教練分析\n\n"
+        "/dreamteam [問題] → 8位教練分析（唔帶問題→審閱最新內容）\n"
+        "/dreamteampdf → Dream Team 分析生成 PDF\n"
+        "/myreport → 睇所有批准嘅 Q&A\n"
+        "/reportpdf → Report Q&A 生成 PDF\n\n"
         f"🔍 網絡搜尋：{search_st}  📡 Apify：{apify_st}\n"
         f"🎙️ 語音轉錄：{voice_st}  📄 PDF：{pdf_st}\n"
         "每日 8:45 自動發送情報簡報（頭條新聞 + 行業要聞 + AI 資訊）。\n\n"
@@ -1074,6 +1127,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📄 PDF：{pdf_st}\n"
         f"🎙️ 語音轉錄：{voice_st}\n"
         f"🔍 網絡搜尋：{search_st}\n"
+        f"📡 RSS 實時新聞：✅ 免費啟用（Google News）\n"
         f"📡 Apify 爬蟲：{apify_st}"
     )
 
@@ -1414,23 +1468,37 @@ async def cmd_dreamteam(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     question = " ".join(context.args) if context.args else ""
-    if not question:
-        await update.message.reply_text(
-            "用法：/dreamteam [你嘅問題]\n\n"
-            "例子：/dreamteam 我嘅痛症引流策略點樣改善？"
-        )
-        return
+    pdf_mode = not question
 
-    await update.message.reply_text(
-        f"🏆 Dream Team 集結中...\n問題：{question}\n\n8位教練並行分析（約60-90秒）..."
-    )
+    if pdf_mode:
+        content_ctx = last_content.get(ALLOWED_USER_ID, "")
+        if not content_ctx:
+            await update.message.reply_text(
+                "⚠️ 未找到最新分析或 PDF 內容。\n\n"
+                "請先讓員工做分析，或生成 PDF，Dream Team 先可以幫你審閱。\n"
+                "或者：/dreamteam [你嘅問題] 直接問教練。"
+            )
+            return
+        display_question = "審閱你最新嘅分析內容"
+        coach_user_msg = (
+            f"以下係 Stanley 最新嘅分析/文件內容，請根據你嘅專長，"
+            f"就呢份內容提供具體改進意見、盲點、或行動建議：\n\n{content_ctx[:4000]}"
+        )
+        await update.message.reply_text(
+            "🏆 Dream Team 審閱模式\n針對你最新嘅分析內容，8位教練並行俾意見（約60-90秒）..."
+        )
+    else:
+        display_question = question
+        coach_user_msg = f"Stanley 的問題：{question}\n\n請根據你的專長，提供具體、可執行的建議。"
+        await update.message.reply_text(
+            f"🏆 Dream Team 集結中...\n問題：{question}\n\n8位教練並行分析（約60-90秒）..."
+        )
 
     loop = asyncio.get_event_loop()
 
     def coach_call(name: str, system_prompt: str) -> tuple[str, str]:
-        user_msg = f"Stanley 的問題：{question}\n\n請根據你的專長，提供具體、可執行的建議。"
         model = DREAM_TEAM_MODELS.get(name, MODEL_FAST)
-        return name, run_with_system(system_prompt, user_msg, model)
+        return name, run_with_system(system_prompt, coach_user_msg, model)
 
     tasks = [loop.run_in_executor(executor, coach_call, n, p) for n, p in DREAM_TEAM_PROMPTS.items()]
     results = list(await asyncio.gather(*tasks))
@@ -1444,7 +1512,7 @@ async def cmd_dreamteam(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     synthesis_user = (
         f"以下係8位世界頂尖商業教練嘅意見：\n\n"
-        f"問題：{question}\n\n{all_responses}\n\n"
+        f"議題：{display_question}\n\n{all_responses}\n\n"
         f"請用廣東話整合核心建議，找出共識、點出分歧、提出最優先嘅3個行動點。格式清晰。"
     )
     synthesis = await loop.run_in_executor(
@@ -1452,7 +1520,120 @@ async def cmd_dreamteam(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "你係一個商業策略整合師，廣東話輸出，清晰有力。",
         synthesis_user,
     )
+    dreamteam_last_synthesis[ALLOWED_USER_ID] = {
+        "question": display_question,
+        "synthesis": synthesis,
+        "responses": all_responses,
+    }
     await send_long(update, f"🏆 Dream Team 整合建議：\n\n{synthesis}")
+    await update.message.reply_text("💡 用 /dreamteampdf 可以將以上分析生成 PDF 報告")
+
+
+# ── Dream Team PDF ────────────────────────────────────────────────────────────
+
+async def cmd_dreamteampdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+    if not REPORTLAB_AVAILABLE:
+        await update.message.reply_text("⚠️ PDF 功能需要 reportlab，請聯絡 VPS 安裝後重啟 bot。")
+        return
+
+    data = dreamteam_last_synthesis.get(ALLOWED_USER_ID)
+    if not data:
+        await update.message.reply_text(
+            "⚠️ 未找到 Dream Team 分析結果。\n"
+            "請先用 /dreamteam 讓教練分析，再用 /dreamteampdf 生成報告。"
+        )
+        return
+
+    await update.message.reply_text("📄 生成 Dream Team 策略報告中（約30秒）...")
+    loop = asyncio.get_event_loop()
+
+    pdf_prompt = (
+        f"根據以下 Dream Team 8位教練嘅分析，生成一份高質素嘅策略報告。\n\n"
+        f"議題：{data['question']}\n\n"
+        f"各教練意見摘要：\n{data['responses'][:5000]}\n\n"
+        f"整合分析：\n{data['synthesis']}\n\n"
+        f"輸出格式：繁體中文，第一行係報告標題（唔加 #），章節標題用 # 開頭，"
+        f"包含：核心建議（每位教練最重要一點）、共識行動、優先執行順序、風險提示。"
+        f"長度 1500-2000字。只輸出報告內容，唔需要其他說明。"
+    )
+
+    content = await loop.run_in_executor(
+        executor, run_with_system,
+        "你係商業策略整合師，輸出高質素 PDF 報告，繁體中文，廣東話語氣。",
+        pdf_prompt,
+    )
+    lines = content.strip().split('\n')
+    title = lines[0].lstrip('#').strip() if lines else "Dream Team 策略報告"
+    body = '\n'.join(lines[1:]) if len(lines) > 1 else content
+    try:
+        import io as _io
+        pdf_bytes = await loop.run_in_executor(executor, generate_pdf_bytes, title, body)
+        safe_name = re.sub(r'[^\w\s]', '', title)[:30].strip().replace(' ', '_') or 'dreamteam_report'
+        await update.message.reply_document(
+            document=_io.BytesIO(pdf_bytes),
+            filename=f"{safe_name}.pdf",
+            caption=f"🏆 Dream Team 策略報告\n{title}"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"PDF 生成失敗：{e}\n\n文字版：\n{content[:2000]}")
+
+
+# ── Report PDF ─────────────────────────────────────────────────────────────────
+
+async def cmd_reportpdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+    if not REPORTLAB_AVAILABLE:
+        await update.message.reply_text("⚠️ PDF 功能需要 reportlab，請安裝後重啟 bot。")
+        return
+
+    report = load_report_buffer()
+    items = report.get(str(ALLOWED_USER_ID), [])
+    if not items:
+        await update.message.reply_text(
+            "⚠️ Report 未有內容。\n"
+            "請先追問員工並選 [✅ 加入 Report]，再用 /reportpdf 生成 PDF。"
+        )
+        return
+
+    await update.message.reply_text(f"📄 整合 {len(items)} 條 Q&A，生成 Report PDF 中（約30秒）...")
+    loop = asyncio.get_event_loop()
+
+    report_text = ""
+    for i, item in enumerate(items, 1):
+        agent = item.get('agent', '')
+        q = item.get('question', '')
+        a = item.get('answer', '')
+        report_text += f"【Q{i} 問 {agent}】{q}\n{a}\n\n"
+
+    pdf_prompt = (
+        f"以下係 Stanley 同各員工嘅重要追問 Q&A 記錄（共 {len(items)} 條）：\n\n"
+        f"{report_text[:5000]}\n\n"
+        f"請整理成一份完整嘅工作報告，第一行係報告標題（唔加 #），章節標題用 # 開頭，"
+        f"按主題分組，突出重要結論同行動建議。繁體中文，廣東話語氣，長度 1200-2000字。"
+        f"只輸出報告內容。"
+    )
+    content = await loop.run_in_executor(
+        executor, run_with_system,
+        "你係 Anna，Stanley 團隊文件整理師，幫 Stanley 整理重要 Q&A 成策略報告，廣東話，繁體中文。",
+        pdf_prompt,
+    )
+    lines = content.strip().split('\n')
+    title = lines[0].lstrip('#').strip() if lines else "工作報告"
+    body = '\n'.join(lines[1:]) if len(lines) > 1 else content
+    try:
+        import io as _io
+        pdf_bytes = await loop.run_in_executor(executor, generate_pdf_bytes, title, body)
+        safe_name = re.sub(r'[^\w\s]', '', title)[:30].strip().replace(' ', '_') or 'report'
+        await update.message.reply_document(
+            document=_io.BytesIO(pdf_bytes),
+            filename=f"{safe_name}.pdf",
+            caption=f"📄 Report PDF 已生成！共 {len(items)} 條 Q&A\n{title}"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"PDF 生成失敗：{e}\n\n文字版：\n{content[:2000]}")
 
 
 # ── New output commands ────────────────────────────────────────────────────────
@@ -2614,17 +2795,32 @@ async def send_daily_report(app):
         loop = asyncio.get_event_loop()
         date_str = _dt.now().strftime("%Y年%m月%d日")
 
+        import asyncio as _aio
+        # RSS 係免費實時主力；DuckDuckGo 做 backup
+        hk_news_rss, ai_raw_rss, industry_rss = await asyncio.gather(
+            loop.run_in_executor(executor, rss_hk_news),
+            loop.run_in_executor(executor, rss_ai_news),
+            loop.run_in_executor(executor, rss_industry_news),
+        )
+        hk_news = hk_news_rss or ""
+        ai_raw = ai_raw_rss or ""
+        industry_raw = industry_rss or ""
         search_ok = WEB_SEARCH_AVAILABLE or (APIFY_AVAILABLE and APIFY_TOKEN)
+        biz_news = ""
         if search_ok:
-            import asyncio as _aio
-            hk_news = await loop.run_in_executor(executor, news_search, "香港今日新聞 頭條 最新", 5)
-            await _aio.sleep(2)
+            if not hk_news:
+                hk_news = await loop.run_in_executor(executor, news_search, "香港今日新聞 頭條 最新", 5)
+                await _aio.sleep(1)
             biz_news = await loop.run_in_executor(executor, news_search, "香港財經商業 重要消息", 4)
-            await _aio.sleep(2)
-            ai_raw = await loop.run_in_executor(executor, news_search, "Claude ChatGPT Gemini AI 最新功能 更新", 5)
-            await _aio.sleep(2)
-            industry_raw = await loop.run_in_executor(executor, news_search, "香港美容 痛症治療 行業動態", 3)
+            await _aio.sleep(1)
+            if not ai_raw:
+                ai_raw = await loop.run_in_executor(executor, news_search, "Claude ChatGPT Gemini AI 最新功能 更新", 5)
+                await _aio.sleep(1)
+            if not industry_raw:
+                industry_raw = await loop.run_in_executor(executor, news_search, "香港美容 痛症治療 行業動態", 3)
 
+        has_real_data = bool(hk_news or biz_news or ai_raw or industry_raw)
+        if has_real_data:
             news_task = (
                 f"根據以下今日香港真實新聞搜尋結果，列出5條最重要頭條，每條一句摘要：\n\n"
                 f"{hk_news[:2000]}\n\n{biz_news[:1500]}\n\n"
@@ -2642,7 +2838,7 @@ async def send_daily_report(app):
                 f"② 對 Stanley 美容/痛症業務嘅直接影響 "
                 f"③ 如有免費可用工具：「工具名 — 免費 — 可用於XX」；付費工具略過唔提"
             )
-            search_tag = "🔍 真實網絡搜尋（Google）" if (APIFY_AVAILABLE and APIFY_TOKEN) else "🔍 真實網絡搜尋"
+            search_tag = "📡 RSS + 🔍 實時搜尋"
         else:
             news_task = (
                 f"今日（{date_str}）香港5條重要新聞頭條，每條一句摘要。"
@@ -2699,6 +2895,8 @@ def main():
     app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("export", cmd_export))
     app.add_handler(CommandHandler("dreamteam", cmd_dreamteam))
+    app.add_handler(CommandHandler("dreamteampdf", cmd_dreamteampdf))
+    app.add_handler(CommandHandler("reportpdf", cmd_reportpdf))
     app.add_handler(CommandHandler("landingpage", cmd_landingpage))
     app.add_handler(CommandHandler("pdf", cmd_pdf))
     app.add_handler(CommandHandler("slides", cmd_slides))
