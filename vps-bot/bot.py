@@ -2332,6 +2332,73 @@ async def run_with_timeout(tasks: list, update: Update, timeout: int = 240, hear
         return None
 
 
+async def run_with_progress_tracker(
+    dispatches: list[dict],
+    update: Update,
+    loop,
+    phase_label: str = "任務進度",
+    timeout: int = 240,
+) -> list[tuple[str, str]] | None:
+    """
+    Run agents in parallel. Shows a live ✅ checklist that edits in-place as each completes.
+    Posts each agent's result via send_long the moment it finishes.
+    Returns list of (agent_name, reply_text) in completion order, or None on timeout.
+    """
+    if not dispatches:
+        return []
+
+    agent_names = [d["agent"] for d in dispatches]
+    status: dict[str, str] = {name: "⬜" for name in agent_names}
+    completed: list[tuple[str, str]] = []
+
+    def format_tracker() -> str:
+        lines = [f"📋 {phase_label}："]
+        for name in agent_names:
+            emoji_a = AGENT_EMOJI.get(name, "🤖")
+            lines.append(f"  {status[name]} {emoji_a} {name}")
+        return "\n".join(lines)
+
+    try:
+        tracker_msg = await update.message.reply_text(format_tracker())
+    except Exception:
+        tracker_msg = None
+
+    async def run_one(agent_name: str, task: str) -> tuple[str, str]:
+        try:
+            return await loop.run_in_executor(executor, agent_call, agent_name, task)
+        except Exception as e:
+            logger.error(f"Agent {agent_name} error: {e}")
+            return (agent_name, f"[ERROR] {str(e)}")
+
+    coros = [run_one(d["agent"], d["task"]) for d in dispatches]
+
+    async def run_all_tracked():
+        for fut in asyncio.as_completed(coros):
+            try:
+                agent_name, reply_text = await fut
+            except Exception as e:
+                logger.error(f"Tracker fut error: {e}")
+                continue
+            status[agent_name] = "✅"
+            if tracker_msg:
+                try:
+                    await tracker_msg.edit_text(format_tracker())
+                except Exception:
+                    pass
+            completed.append((agent_name, reply_text))
+            if "[QUOTA_EXCEEDED]" not in reply_text and "[ERROR]" not in reply_text:
+                emoji = AGENT_EMOJI.get(agent_name, "🤖")
+                await send_long(update, f"{emoji} {agent_name}：\n{reply_text}")
+
+    try:
+        await asyncio.wait_for(run_all_tracked(), timeout=timeout)
+    except asyncio.TimeoutError:
+        await update.message.reply_text("⚠️ 任務超時（超過 4 分鐘），請重新發送指令再試。")
+        return None
+
+    return completed
+
+
 async def dispatch_with_content(update: Update, file_content: str, user_intent: str):
     loop = asyncio.get_event_loop()
     history = conversation_history.setdefault(ALLOWED_USER_ID, [])
@@ -2388,8 +2455,7 @@ async def dispatch_with_content(update: Update, file_content: str, user_intent: 
 
     # Step 2: Run analysis agents in parallel first — collect their results
     if normal_dispatches:
-        tasks = [loop.run_in_executor(executor, agent_call, d["agent"], d["task"]) for d in normal_dispatches]
-        results = await run_with_timeout(tasks, update)
+        results = await run_with_progress_tracker(normal_dispatches, update, loop, phase_label="員工任務進度")
         if results is None:
             return
         for agent_name, reply_text in results:
@@ -2397,9 +2463,7 @@ async def dispatch_with_content(update: Update, file_content: str, user_intent: 
                 await update.message.reply_text(QUOTA_EXCEEDED_MSG)
                 return
             emoji = AGENT_EMOJI.get(agent_name, "🤖")
-            msg = f"{emoji} {agent_name}：\n{reply_text}"
-            full_results += msg + "\n\n"
-            await send_long(update, msg)
+            full_results += f"{emoji} {agent_name}：\n{reply_text}\n\n"
 
     # Step 3: Run file agents with ALL analysis results so Anna has full context
     combined_context = full_results  # includes all analysis agents' output
@@ -2943,8 +3007,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if research_dispatches:
         r_names = "、".join(d["agent"] for d in research_dispatches)
         await send_long(update, f"👩‍💼 Amy：【Phase 1】派出研究員 {r_names}，搜集數據中...")
-        tasks = [loop.run_in_executor(executor, agent_call, d["agent"], d["task"]) for d in research_dispatches]
-        results = await run_with_timeout(tasks, update)
+        results = await run_with_progress_tracker(research_dispatches, update, loop, phase_label="Phase 1 研究進度")
         if results is None:
             return
         for agent_name, reply_text in results:
@@ -2952,7 +3015,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(QUOTA_EXCEEDED_MSG)
                 return
             emoji = AGENT_EMOJI.get(agent_name, "🤖")
-            await send_long(update, f"{emoji} {agent_name}：\n{reply_text}")
             full_results += f"{emoji} {agent_name}：\n{reply_text}\n\n"
             agent_outputs.setdefault(ALLOWED_USER_ID, {})[agent_name] = reply_text
             save_agent_outputs_to_disk(agent_outputs)
@@ -2980,8 +3042,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             augmented.append({"agent": d["agent"], "task": task})
 
-        tasks = [loop.run_in_executor(executor, agent_call, d["agent"], d["task"]) for d in augmented]
-        results = await run_with_timeout(tasks, update)
+        results = await run_with_progress_tracker(augmented, update, loop, phase_label="Phase 2 策略進度")
         if results is None:
             return
         for agent_name, reply_text in results:
@@ -2989,7 +3050,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(QUOTA_EXCEEDED_MSG)
                 return
             emoji = AGENT_EMOJI.get(agent_name, "🤖")
-            await send_long(update, f"{emoji} {agent_name}：\n{reply_text}")
             full_results += f"{emoji} {agent_name}：\n{reply_text}\n\n"
             agent_outputs.setdefault(ALLOWED_USER_ID, {})[agent_name] = reply_text
             save_agent_outputs_to_disk(agent_outputs)
