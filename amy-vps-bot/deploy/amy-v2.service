@@ -1,0 +1,17 @@
+[Unit]
+Description=Amy V2 Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/amy-v2
+EnvironmentFile=/root/amy-v2/.env
+ExecStart=/root/amy-v2/venv/bin/python /root/amy-v2/bot_v2.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

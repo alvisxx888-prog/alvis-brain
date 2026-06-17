@@ -1,0 +1,17 @@
+[Unit]
+Description=Amy VPS Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/amy-vps-bot
+EnvironmentFile=/root/amy-vps-bot/.env
+ExecStart=/root/amy-vps-bot/venv/bin/python /root/amy-vps-bot/bot.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+python-telegram-bot>=21.6
+openai>=1.93.0
+python-dotenv>=1.0.1
+apscheduler>=3.10.4
+reportlab>=4.2.2
+python-pptx>=1.0.2
+cryptography<46
+pdfplumber>=0.11.4
+python-docx>=1.1.2
+duckduckgo-search>=6.3.0
+apify-client>=1.8.1
+instaloader>=4.14.1
+facebook-scraper>=0.2.59
+lxml_html_clean>=0.4.3
+faster-whisper>=1.1.1
