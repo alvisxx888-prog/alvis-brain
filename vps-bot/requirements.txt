@@ -1,2 +1,12 @@
 anthropic
 python-telegram-bot
+apscheduler
+duckduckgo-search
+apify-client
+openai
+python-pptx
+reportlab
+pdfplumber
+python-docx
+instaloader
+facebook-scraper
