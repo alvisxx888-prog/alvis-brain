@@ -76,6 +76,7 @@ CLAUDE_PATH = "/root/.local/bin/claude"
 HISTORY_FILE = "/root/claude-bot/history.json"
 LAST_CONTENT_FILE = "/root/claude-bot/last_content.json"
 USAGE_FILE = "/root/claude-bot/usage.json"
+AGENT_OUTPUTS_FILE = "/root/claude-bot/agent_outputs.json"
 APIFY_TOKEN = os.environ.get("APIFY_API_TOKEN", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GAMMA_API_KEY = os.environ.get("GAMMA_API_KEY", "")
@@ -349,6 +350,23 @@ def save_history(history: dict):
         logger.error(f"Save history error: {e}")
 
 
+def load_agent_outputs() -> dict:
+    try:
+        if os.path.exists(AGENT_OUTPUTS_FILE):
+            with open(AGENT_OUTPUTS_FILE, "r", encoding="utf-8") as f:
+                return {int(k): v for k, v in json.load(f).items()}
+    except Exception:
+        pass
+    return {}
+
+def save_agent_outputs_to_disk(data: dict):
+    try:
+        with open(AGENT_OUTPUTS_FILE, "w", encoding="utf-8") as f:
+            json.dump({str(k): v for k, v in data.items()}, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Save agent_outputs error: {e}")
+
+
 def load_last_content() -> dict:
     try:
         if os.path.exists(LAST_CONTENT_FILE):
@@ -402,10 +420,10 @@ def get_usage_warning() -> str:
 
 executor = ThreadPoolExecutor(max_workers=10)
 conversation_history: dict[int, list] = load_history()
-MAX_HISTORY = 10
+MAX_HISTORY = 20
 last_content: dict[int, str] = load_last_content()  # 持久化，重啟後仍保留
 follow_up_state: dict[int, dict] = {}   # {user_id: {"agent": "Leo", "context": "...", "active": True}}
-agent_outputs: dict[int, dict] = {}     # {user_id: {"Leo": "Leo's output", "Kai": "Kai's output"}}
+agent_outputs: dict[int, dict] = load_agent_outputs()  # 持久化，重啟後仍保留
 
 REPORT_BUFFER_FILE = "/root/claude-bot/report_buffer.json"
 pending_report_entry: dict[int, dict] = {}  # {user_id: {"agent":..,"question":..,"answer":..}}
@@ -1912,7 +1930,7 @@ async def dispatch_with_content(update: Update, file_content: str, user_intent: 
     raw = await loop.run_in_executor(
         executor, run_with_system, AMY_DISPATCH_SYSTEM,
         f"Stanley 最新指令：{combined_input}",
-        "claude-haiku-4-5-20251001"
+        MODEL_FAST
     )
 
     if "[QUOTA_EXCEEDED]" in raw:
@@ -2133,9 +2151,12 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def detect_agent_from_message(text: str) -> str:
-    """Parse emoji prefix to identify which agent sent a message."""
+    """Parse emoji in first 60 chars to identify which agent sent a message."""
+    if not text:
+        return ""
+    preview = text[:60]
     for name, emoji in AGENT_EMOJI.items():
-        if text.startswith(emoji):
+        if emoji in preview:
             return name
     return ""
 
@@ -2145,11 +2166,19 @@ async def handle_reply_to_agent(update: Update, context: ContextTypes.DEFAULT_TY
     user_question = update.message.text
     emoji = AGENT_EMOJI.get(agent_name, "🤖")
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
-    agent_ctx = agent_outputs.get(ALLOWED_USER_ID, {}).get(agent_name, original_text[:3000])
+    all_outputs = agent_outputs.get(ALLOWED_USER_ID, {})
+    agent_ctx = all_outputs.get(agent_name, original_text[:3000])
+    # 跨員工 context：把其他員工嘅成果一起帶入
+    other_ctx = ""
+    for other_name, other_output in all_outputs.items():
+        if other_name != agent_name:
+            other_emoji = AGENT_EMOJI.get(other_name, "🤖")
+            other_ctx += f"\n\n【{other_emoji} {other_name} 嘅成果】\n{other_output[:1500]}"
     prompt = (
-        f"以下係你之前完成嘅分析成果：\n\n{agent_ctx}\n\n{'='*30}\n\n"
-        f"Stanley 追問：{user_question}\n\n"
-        f"請根據你上面嘅分析，詳細回答 Stanley 嘅追問。如有需要可以補充額外觀點。"
+        f"以下係你之前完成嘅分析成果：\n\n{agent_ctx}\n\n"
+        + (f"{'='*30}\n【其他員工嘅相關成果（供參考）】{other_ctx}\n\n{'='*30}\n\n" if other_ctx else "")
+        + f"Stanley 追問：{user_question}\n\n"
+        f"請根據你上面嘅分析（以及其他員工嘅成果），詳細回答 Stanley 嘅追問。如有需要可跨員工洞見提供更全面答案。"
     )
     loop = asyncio.get_event_loop()
     _, reply_text = await loop.run_in_executor(executor, agent_call, agent_name, prompt)
@@ -2227,10 +2256,17 @@ async def handle_followup_message(update: Update, context: ContextTypes.DEFAULT_
     loop = asyncio.get_event_loop()
     emoji = AGENT_EMOJI.get(agent_name, "🤖")
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+    all_outputs = agent_outputs.get(ALLOWED_USER_ID, {})
+    other_ctx = ""
+    for other_name, other_output in all_outputs.items():
+        if other_name != agent_name:
+            other_emoji = AGENT_EMOJI.get(other_name, "🤖")
+            other_ctx += f"\n\n【{other_emoji} {other_name} 嘅成果】\n{other_output[:1200]}"
     prompt = (
-        f"以下係你之前完成嘅分析成果：\n\n{agent_ctx}\n\n{'='*30}\n\n"
-        f"Stanley 追問：{user_question}\n\n"
-        f"請根據你上面嘅分析，詳細回答 Stanley 嘅追問。如有需要可以補充額外觀點。"
+        f"以下係你之前完成嘅分析成果：\n\n{agent_ctx}\n\n"
+        + (f"{'='*30}\n【其他員工嘅相關成果（供參考）】{other_ctx}\n\n{'='*30}\n\n" if other_ctx else "")
+        + f"Stanley 追問：{user_question}\n\n"
+        f"請根據你上面嘅分析（以及其他員工嘅成果），詳細回答 Stanley 嘅追問。如有需要可跨員工洞見提供更全面答案。"
     )
     _, reply_text = await loop.run_in_executor(executor, agent_call, agent_name, prompt)
     h = conversation_history.setdefault(ALLOWED_USER_ID, [])
@@ -2317,7 +2353,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{content_hint}"
         f"Stanley 最新指令：{user_message}"
     )
-    raw = await loop.run_in_executor(executor, run_with_system, AMY_DISPATCH_SYSTEM, dispatch_user, "claude-haiku-4-5-20251001")
+    raw = await loop.run_in_executor(executor, run_with_system, AMY_DISPATCH_SYSTEM, dispatch_user, MODEL_FAST)
 
     if "[QUOTA_EXCEEDED]" in raw:
         await update.message.reply_text(QUOTA_EXCEEDED_MSG)
@@ -2494,6 +2530,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             full_results += msg + "\n\n"
             await send_long(update, msg)
             agent_outputs.setdefault(ALLOWED_USER_ID, {})[agent_name] = reply_text
+            save_agent_outputs_to_disk(agent_outputs)
             agents_ran.append(agent_name)
         if agents_ran:
             buttons = [[InlineKeyboardButton(f"🔍 追問 {n}", callback_data=f"followup:{n}")] for n in agents_ran]
