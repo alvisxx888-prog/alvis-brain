@@ -47,6 +47,21 @@ except ImportError:
     OPENAI_AVAILABLE = False
 
 try:
+    from faster_whisper import WhisperModel as FasterWhisperModel
+    FASTER_WHISPER_AVAILABLE = True
+except ImportError:
+    FASTER_WHISPER_AVAILABLE = False
+
+_faster_whisper_model = None
+
+def get_faster_whisper_model():
+    global _faster_whisper_model
+    if _faster_whisper_model is None:
+        # base model：質素好，VPS CPU 可以跑，首次需下載約 150MB
+        _faster_whisper_model = FasterWhisperModel("base", device="cpu", compute_type="int8")
+    return _faster_whisper_model
+
+try:
     from pptx import Presentation
     from pptx.util import Inches, Pt
     from pptx.dml.color import RGBColor
@@ -708,21 +723,34 @@ def scrape_threads(username: str, max_posts: int = 12) -> str:
 # ── Voice transcription (OpenAI Whisper) ──────────────────────────────────────
 
 def transcribe_audio(audio_bytes: bytes, filename: str = "voice.ogg") -> str:
-    if not OPENAI_AVAILABLE or not OPENAI_API_KEY:
-        return "[需要設定 OPENAI_API_KEY 才能使用語音轉錄]"
-    try:
-        import io as _io
-        client = openai_lib.OpenAI(api_key=OPENAI_API_KEY)
-        audio_file = _io.BytesIO(audio_bytes)
-        audio_file.name = filename
-        transcript = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio_file,
-        )
-        return transcript.text
-    except Exception as e:
-        logger.error(f"Whisper transcription error: {e}")
-        return f"[錄音轉錄失敗：{e}]"
+    # faster-whisper（本地，免費，優先）
+    if FASTER_WHISPER_AVAILABLE:
+        try:
+            import io as _io, tempfile, os as _os
+            with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as tmp:
+                tmp.write(audio_bytes)
+                tmp_path = tmp.name
+            model = get_faster_whisper_model()
+            segments, info = model.transcribe(tmp_path, language="zh", beam_size=5)
+            text = " ".join(seg.text.strip() for seg in segments).strip()
+            _os.unlink(tmp_path)
+            return text if text else "[錄音內容為空]"
+        except Exception as e:
+            logger.error(f"faster-whisper error: {e}")
+            # fallback to OpenAI if available
+    # OpenAI Whisper fallback
+    if OPENAI_AVAILABLE and OPENAI_API_KEY:
+        try:
+            import io as _io
+            client = openai_lib.OpenAI(api_key=OPENAI_API_KEY)
+            audio_file = _io.BytesIO(audio_bytes)
+            audio_file.name = filename
+            transcript = client.audio.transcriptions.create(model="whisper-1", file=audio_file)
+            return transcript.text
+        except Exception as e:
+            logger.error(f"OpenAI Whisper error: {e}")
+            return f"[錄音轉錄失敗：{e}]"
+    return "[語音功能未啟用：請在 VPS 安裝 faster-whisper]"
 
 
 # ── PowerPoint generation (python-pptx) ───────────────────────────────────────
@@ -1106,7 +1134,12 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     h = conversation_history.get(ALLOWED_USER_ID, [])
     search_st = "✅ 啟用（真實新聞）" if WEB_SEARCH_AVAILABLE else "❌ 需安裝 duckduckgo-search"
     apify_st  = "✅ 啟用" if (APIFY_AVAILABLE and APIFY_TOKEN) else "❌ 需設定 APIFY_API_TOKEN"
-    voice_st = "✅ 啟用（Whisper）" if (OPENAI_AVAILABLE and OPENAI_API_KEY) else "❌ 需設定 OPENAI_API_KEY"
+    if FASTER_WHISPER_AVAILABLE:
+        voice_st = "✅ 啟用（本地 Whisper，免費）"
+    elif OPENAI_AVAILABLE and OPENAI_API_KEY:
+        voice_st = "✅ 啟用（OpenAI Whisper）"
+    else:
+        voice_st = "❌ 未啟用（pip install faster-whisper）"
     pdf_st   = "✅ 啟用" if REPORTLAB_AVAILABLE else "❌ 需安裝 reportlab"
     dalle_st = "✅ DALL-E 3（真實生成）" if (OPENAI_AVAILABLE and OPENAI_API_KEY) else "⚡ Pollinations.ai（免費）"
     gamma_st = "✅ Gamma AI（專業簡報）" if GAMMA_API_KEY else "❌ 未設定（用 python-pptx）\n   設定：export GAMMA_API_KEY='你的key'"
@@ -2302,14 +2335,12 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     voice = update.message.voice or update.message.audio
     if not voice:
         return
-    if not OPENAI_AVAILABLE or not OPENAI_API_KEY:
+    if not FASTER_WHISPER_AVAILABLE and not (OPENAI_AVAILABLE and OPENAI_API_KEY):
         await update.message.reply_text(
-            "⚠️ 語音功能需要設定 OpenAI API Key：\n\n"
-            "1. 喺 VPS 執行：\n"
-            "   export OPENAI_API_KEY='你的key'\n"
-            "   echo 'export OPENAI_API_KEY=你的key' >> /root/.bashrc\n"
-            "2. pip install openai\n"
-            "3. systemctl restart claude-bot"
+            "⚠️ 語音功能未啟用。\n\n"
+            "VPS 安裝免費語音轉錄：\n"
+            "pip install faster-whisper\n"
+            "systemctl restart claude-bot"
         )
         return
     await update.message.reply_text("🎙️ 收到錄音，轉錄中...")
