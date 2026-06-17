@@ -407,6 +407,27 @@ last_content: dict[int, str] = load_last_content()  # 持久化，重啟後仍�
 follow_up_state: dict[int, dict] = {}   # {user_id: {"agent": "Leo", "context": "...", "active": True}}
 agent_outputs: dict[int, dict] = {}     # {user_id: {"Leo": "Leo's output", "Kai": "Kai's output"}}
 
+REPORT_BUFFER_FILE = "/root/claude-bot/report_buffer.json"
+pending_report_entry: dict[int, dict] = {}  # {user_id: {"agent":..,"question":..,"answer":..}}
+
+def load_report_buffer() -> dict:
+    try:
+        if os.path.exists(REPORT_BUFFER_FILE):
+            with open(REPORT_BUFFER_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+def save_report_buffer(data: dict):
+    try:
+        with open(REPORT_BUFFER_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Save report_buffer error: {e}")
+
+report_buffer: dict = load_report_buffer()  # {str(user_id): [{"agent","question","answer","ts"}]}
+
 
 # ── Web search (DuckDuckGo — free) ─────────────────────────────────────────────
 
@@ -2111,6 +2132,76 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+def detect_agent_from_message(text: str) -> str:
+    """Parse emoji prefix to identify which agent sent a message."""
+    for name, emoji in AGENT_EMOJI.items():
+        if text.startswith(emoji):
+            return name
+    return ""
+
+
+async def handle_reply_to_agent(update: Update, context: ContextTypes.DEFAULT_TYPE, agent_name: str, original_text: str):
+    """User swiped left and replied to an agent message — route follow-up directly to that agent."""
+    user_question = update.message.text
+    emoji = AGENT_EMOJI.get(agent_name, "🤖")
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+    agent_ctx = agent_outputs.get(ALLOWED_USER_ID, {}).get(agent_name, original_text[:3000])
+    prompt = (
+        f"以下係你之前完成嘅分析成果：\n\n{agent_ctx}\n\n{'='*30}\n\n"
+        f"Stanley 追問：{user_question}\n\n"
+        f"請根據你上面嘅分析，詳細回答 Stanley 嘅追問。如有需要可以補充額外觀點。"
+    )
+    loop = asyncio.get_event_loop()
+    _, reply_text = await loop.run_in_executor(executor, agent_call, agent_name, prompt)
+    await send_long(update, f"{emoji} {agent_name}：\n{reply_text}")
+    pending_report_entry[ALLOWED_USER_ID] = {
+        "agent": agent_name,
+        "question": user_question,
+        "answer": reply_text,
+    }
+    buttons = [[
+        InlineKeyboardButton("✅ 加入 Report", callback_data="report_action:add"),
+        InlineKeyboardButton("❌ 唔使", callback_data="report_action:skip"),
+    ]]
+    await update.message.reply_text("要加入 Report 嗎？", reply_markup=InlineKeyboardMarkup(buttons))
+
+
+async def handle_report_action_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    if query.from_user.id != ALLOWED_USER_ID:
+        return
+    action = query.data.split(":", 1)[1]
+    entry = pending_report_entry.pop(ALLOWED_USER_ID, None)
+    if action == "add" and entry:
+        import datetime
+        entry["ts"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        key = str(ALLOWED_USER_ID)
+        report_buffer.setdefault(key, []).append(entry)
+        save_report_buffer(report_buffer)
+        await query.edit_message_text("✅ 已加入 Report！用 /myreport 睇累積內容。")
+    else:
+        await query.edit_message_text("👌 OK，純粹問問。")
+
+
+async def cmd_myreport(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+    key = str(ALLOWED_USER_ID)
+    entries = report_buffer.get(key, [])
+    if not entries:
+        await update.message.reply_text("📋 Report 係空嘅，仲未加入任何內容。\n\n追問員工後，tap ✅ 加入 Report 先。")
+        return
+    lines = ["📋 *累積 Report*\n"]
+    for i, e in enumerate(entries, 1):
+        emoji = AGENT_EMOJI.get(e["agent"], "🤖")
+        lines.append(f"*{i}. {emoji} {e['agent']}* — {e.get('ts','')}")
+        lines.append(f"❓ {e['question']}")
+        lines.append(f"💬 {e['answer'][:800]}")
+        lines.append("")
+    await send_long(update, "\n".join(lines))
+
+
 async def handle_followup_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -2151,6 +2242,16 @@ async def handle_followup_message(update: Update, context: ContextTypes.DEFAULT_
     save_last_content_to_disk(last_content)
     follow_up_state[ALLOWED_USER_ID]["context"] = updated_ctx[:4000]
     await send_long(update, f"{emoji} {agent_name}：\n{reply_text}")
+    pending_report_entry[ALLOWED_USER_ID] = {
+        "agent": agent_name,
+        "question": user_question,
+        "answer": reply_text,
+    }
+    buttons = [[
+        InlineKeyboardButton("✅ 加入 Report", callback_data="report_action:add"),
+        InlineKeyboardButton("❌ 唔使", callback_data="report_action:skip"),
+    ]]
+    await update.message.reply_text("要加入 Report 嗎？", reply_markup=InlineKeyboardMarkup(buttons))
 
 
 async def cmd_done(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2170,6 +2271,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     if not user_message:
         return
+
+    # 向左掃 reply 員工訊息 → 直接追問該員工
+    replied = update.message.reply_to_message
+    if replied and replied.from_user and replied.from_user.is_bot:
+        agent_name = detect_agent_from_message(replied.text or "")
+        if agent_name:
+            await handle_reply_to_agent(update, context, agent_name, replied.text or "")
+            return
 
     # Follow-up mode: route to specific agent Q&A
     state = follow_up_state.get(ALLOWED_USER_ID, {})
@@ -2565,7 +2674,9 @@ def main():
     app.add_handler(CommandHandler("xhs", cmd_xhs))
     app.add_handler(CommandHandler("research", cmd_research))
     app.add_handler(CommandHandler("done", cmd_done))
+    app.add_handler(CommandHandler("myreport", cmd_myreport))
     app.add_handler(CallbackQueryHandler(handle_followup_callback, pattern="^followup:"))
+    app.add_handler(CallbackQueryHandler(handle_report_action_callback, pattern="^report_action:"))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))
