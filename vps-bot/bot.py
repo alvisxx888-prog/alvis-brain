@@ -448,12 +448,8 @@ def scrape_instagram(username: str, max_posts: int = 12) -> str:
     if not INSTALOADER_AVAILABLE:
         fallback = web_search(f"Instagram {username} 最新帖文 內容", 6)
         return (
-            "Instaloader 未安裝，無法直接抓 IG profile。
-
-"
-            "以下係網絡搜尋 fallback，唔係直接由 IG profile 抓出嚟，準確度會低啲：
-
-"
+            "Instaloader 未安裝，無法直接抓 IG profile。\n\n"
+            "以下係網絡搜尋 fallback，唔係直接由 IG profile 抓出嚟，準確度會低啲：\n\n"
             f"{fallback}"
         )
 
@@ -469,10 +465,7 @@ def scrape_instagram(username: str, max_posts: int = 12) -> str:
         )
         profile = instaloader.Profile.from_username(L.context, username)
         follower_count = profile.followers
-        output = f"📊 @{username}（{follower_count:,} followers）最新 {max_posts} 帖：
-來源：Instaloader public scrape
-
-"
+        output = f"📊 @{username}（{follower_count:,} followers）最新 {max_posts} 帖：\n來源：Instaloader public scrape\n\n"
         for i, post in enumerate(profile.get_posts()):
             if i >= max_posts:
                 break
@@ -480,23 +473,15 @@ def scrape_instagram(username: str, max_posts: int = 12) -> str:
             comments = post.comments
             caption = (post.caption or "（無文字）")[:150]
             ts = post.date_local.strftime("%Y-%m-%d")
-            output += f"{i+1}. [{ts}] 👍{likes} 💬{comments}
-{caption}
-
-"
+            output += f"{i+1}. [{ts}] 👍{likes} 💬{comments}\n{caption}\n\n"
         return output.strip()
     except Exception as e:
         logger.warning(f"Instaloader IG scrape error: {e}; using web search fallback")
         fallback = web_search(f"Instagram {username} 最新帖文 內容", 6)
         return (
-            f"Instaloader 抓唔到 @{username}，可能係 IG 限制公開讀取、帳號私人/不存在、login required、rate limit 或網絡問題。
-"
-            f"錯誤：{e}
-
-"
-            "以下係網絡搜尋 fallback，唔係直接由 IG profile 抓出嚟，準確度會低啲：
-
-"
+            f"Instaloader 抓唔到 @{username}，可能係 IG 限制公開讀取、帳號私人/不存在、login required、rate limit 或網絡問題。\n"
+            f"錯誤：{e}\n\n"
+            "以下係網絡搜尋 fallback，唔係直接由 IG profile 抓出嚟，準確度會低啲：\n\n"
             f"{fallback}"
         )
 
