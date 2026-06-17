@@ -272,6 +272,13 @@ Amy 直接回答時：
 
 action types: scrape_ig / scrape_threads / scrape_fb / scrape_xhs / scrape_web / scrape_news / product_research"""
 
+# ── Agent 角色分工 ─────────────────────────────────────────────────────────────
+# Phase 1 - 研究員：先跑，成果傳俾策略師
+RESEARCH_AGENTS = {"Leo", "Kai"}
+# Phase 2 - 策略師：收到研究成果後制定策略
+STRATEGY_AGENTS = {"Small", "Tony", "Rex", "Mia", "Toxic"}
+# Phase 3 - 製作師：收到所有成果後出成品（Anna 永遠係最後）
+
 AGENT_EMOJI = {
     "Amy":   "👩‍💼",
     "Anna":  "🎨",
@@ -2718,46 +2725,102 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     full_results = ""
 
-    # Step 1: Separate file agents (Anna PDF/slides/html) from analysis agents
-    file_dispatches = []
-    normal_dispatches = []
+    # ── 分三個 Phase 執行 ──────────────────────────────────────────────────────
     _file_keywords = ["pdf", "pdf文件", "pdf文檔", "slides", "幻燈片", "powerpoint", "簡報", "ppt", ".pptx", "landing page", "landingpage", "html", "網頁", "報告", "提案"]
+    file_dispatches = []
+    research_dispatches = []
+    strategy_dispatches = []
     for d in dispatches:
         is_file = d["agent"] == "Anna" and any(kw in d["task"].lower() for kw in _file_keywords)
-        (file_dispatches if is_file else normal_dispatches).append(d)
+        if is_file:
+            file_dispatches.append(d)
+        elif d["agent"] in RESEARCH_AGENTS:
+            research_dispatches.append(d)
+        else:
+            strategy_dispatches.append(d)
 
-    # Step 2: Run analysis agents in parallel first — collect their results
-    if normal_dispatches:
-        tasks = [loop.run_in_executor(executor, agent_call, d["agent"], d["task"]) for d in normal_dispatches]
+    research_results = ""   # Phase 1 成果，傳俾 Phase 2
+    all_agents_ran = []
+
+    # ── Phase 1：研究員（Leo / Kai）——搜集數據 ──────────────────────────────
+    if research_dispatches:
+        r_names = "、".join(d["agent"] for d in research_dispatches)
+        await send_long(update, f"👩‍💼 Amy：【Phase 1】派出研究員 {r_names}，搜集數據中...")
+        tasks = [loop.run_in_executor(executor, agent_call, d["agent"], d["task"]) for d in research_dispatches]
         results = await run_with_timeout(tasks, update)
         if results is None:
             return
-        agents_ran = []
         for agent_name, reply_text in results:
             if "[QUOTA_EXCEEDED]" in reply_text:
                 await update.message.reply_text(QUOTA_EXCEEDED_MSG)
                 return
             emoji = AGENT_EMOJI.get(agent_name, "🤖")
-            msg = f"{emoji} {agent_name}：\n{reply_text}"
-            full_results += msg + "\n\n"
-            await send_long(update, msg)
+            await send_long(update, f"{emoji} {agent_name}：\n{reply_text}")
+            full_results += f"{emoji} {agent_name}：\n{reply_text}\n\n"
             agent_outputs.setdefault(ALLOWED_USER_ID, {})[agent_name] = reply_text
             save_agent_outputs_to_disk(agent_outputs)
-            agents_ran.append(agent_name)
-        if agents_ran:
-            buttons = [[InlineKeyboardButton(f"🔍 追問 {n}", callback_data=f"followup:{n}")] for n in agents_ran]
-            await update.message.reply_text("💬 想追問任何員工？", reply_markup=InlineKeyboardMarkup(buttons))
+            research_results += f"【{emoji} {agent_name} 研究成果】\n{reply_text[:2500]}\n\n"
+            all_agents_ran.append(agent_name)
 
-    # Step 3: Build combined context from actions + analysis agents, then run file agents
+    # ── Phase 2：策略師（Small / Tony / Rex / Mia / Toxic）——整合研究出策略 ──
+    if strategy_dispatches:
+        s_names = "、".join(d["agent"] for d in strategy_dispatches)
+        if research_results:
+            r_done = "、".join(d["agent"] for d in research_dispatches)
+            await send_long(update, f"👩‍💼 Amy：{r_done} 研究完成！將數據傳俾 {s_names}，制定策略中...")
+        else:
+            await send_long(update, f"👩‍💼 Amy：【Phase 2】派出 {s_names} 制定策略中...")
+
+        augmented = []
+        for d in strategy_dispatches:
+            task = d["task"]
+            if research_results:
+                task = (
+                    f"【研究員已完成數據搜集，你必須根據以下真實數據制定策略，唔好忽略任何重要發現】\n\n"
+                    f"{research_results[:3000]}\n"
+                    f"{'='*40}\n\n"
+                    f"你的任務：\n{task}"
+                )
+            augmented.append({"agent": d["agent"], "task": task})
+
+        tasks = [loop.run_in_executor(executor, agent_call, d["agent"], d["task"]) for d in augmented]
+        results = await run_with_timeout(tasks, update)
+        if results is None:
+            return
+        for agent_name, reply_text in results:
+            if "[QUOTA_EXCEEDED]" in reply_text:
+                await update.message.reply_text(QUOTA_EXCEEDED_MSG)
+                return
+            emoji = AGENT_EMOJI.get(agent_name, "🤖")
+            await send_long(update, f"{emoji} {agent_name}：\n{reply_text}")
+            full_results += f"{emoji} {agent_name}：\n{reply_text}\n\n"
+            agent_outputs.setdefault(ALLOWED_USER_ID, {})[agent_name] = reply_text
+            save_agent_outputs_to_disk(agent_outputs)
+            all_agents_ran.append(agent_name)
+
+    # Phase 3（Anna）係後面 file_dispatches 處理，唔係喺呢度
+
+    # 追問按鈕（所有 Phase 1 + 2 嘅員工）
+    if all_agents_ran:
+        buttons = [[InlineKeyboardButton(f"🔍 追問 {n}", callback_data=f"followup:{n}")] for n in all_agents_ran]
+        await update.message.reply_text("💬 想追問任何員工？", reply_markup=InlineKeyboardMarkup(buttons))
+
+    # 整合所有成果 → Phase 3 Anna 用
     combined_context = ""
     if action_context:
         combined_context += f"【數據擷取結果】\n{action_context}\n\n"
     if full_results:
-        combined_context += f"【分析員成果】\n{full_results}\n\n"
+        combined_context += f"【Phase 1+2 員工成果】\n{full_results}\n\n"
 
-    # Amy organises all collected data into a structured creative brief for Anna
+    # ── Phase 3：Anna 製作成品（收到所有 Phase 1+2 成果後才出手）────────────
+    if file_dispatches:
+        if combined_context:
+            await send_long(update, "👩‍💼 Amy：【Phase 3】所有員工完成！整理成果，交俾 🎨 Anna 製作最終成品中...")
+        else:
+            await send_long(update, "👩‍💼 Amy：【Phase 3】派出 🎨 Anna 製作成品中...")
+
     if file_dispatches and combined_context:
-        await update.message.reply_text("📋 Amy 整理所有員工成果，為 Anna 準備完整製作簡報...")
+        await update.message.reply_text("📋 Amy 整合所有員工成果，為 Anna 準備完整製作簡報...")
         brief_prompt = (
             f"你係 Amy，需要整理一份完整嘅製作簡報俾 Anna。\n\n"
             f"Stanley 嘅原始指令：{user_message}\n\n"
@@ -2791,24 +2854,31 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await send_long(update, msg)
 
     all_results = (action_context + full_results).strip()
-    consolidate_user = (
-        f"Stanley 嘅原始指令：{user_message}\n\n"
-        f"各 Agent 回覆：\n{all_results}\n\n"
-        f"請整合所有 Agent 嘅回覆，突出最重要嘅行動點。"
-    )
-    summary = await loop.run_in_executor(executor, run_with_system, AGENT_PROMPTS['Amy'], consolidate_user, AGENT_MODELS['Amy'])
-    if "[QUOTA_EXCEEDED]" in summary:
-        await update.message.reply_text(QUOTA_EXCEEDED_MSG)
-        return
-    summary_msg = f"{AGENT_EMOJI['Amy']} Amy 整合報告：\n{summary}"
-    await send_long(update, summary_msg)
+    if all_results:
+        consolidate_user = (
+            f"Stanley 嘅原始指令：{user_message}\n\n"
+            f"各員工完整成果：\n{all_results[:5000]}\n\n"
+            f"你係 Amy，Stanley 嘅秘書。所有員工已完成工作，請用廣東話出最終行動報告：\n"
+            f"① 今次最重要嘅發現或成果（1-2句）\n"
+            f"② 最優先行動（本週可以即時做嘅3件事，每件要具體）\n"
+            f"③ 下一步建議（如需跟進或製作成品，說明點做）\n"
+            f"格式清晰，唔超過200字。"
+        )
+        summary = await loop.run_in_executor(executor, run_with_system, AGENT_PROMPTS['Amy'], consolidate_user, AGENT_MODELS['Amy'])
+        if "[QUOTA_EXCEEDED]" in summary:
+            await update.message.reply_text(QUOTA_EXCEEDED_MSG)
+            return
+        summary_msg = f"{AGENT_EMOJI['Amy']} Amy 最終報告：\n\n{summary}"
+        await send_long(update, summary_msg)
+    else:
+        summary_msg = ""
 
     # Save all agent outputs to last_content so follow-up "optimize/redo" commands have full context
     if all_results:
         last_content[ALLOWED_USER_ID] = all_results[:8000]
         save_last_content_to_disk(last_content)
 
-    full_reply = f"{AGENT_EMOJI['Amy']} Amy：{amy_msg}\n\n{full_results}\n{summary_msg}"
+    full_reply = f"{AGENT_EMOJI['Amy']} Amy：{amy_msg}\n\n{full_results}\n{summary_msg}".strip()
     history.append({"role": "user", "content": user_message})
     history.append({"role": "assistant", "content": full_reply})
     save_history(conversation_history)
