@@ -3756,7 +3756,7 @@ async def cmd_removedata(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ── 全平台掃描 /scan ──────────────────────────────────────────────────────────────
 
 async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """/scan [關鍵詞] — 同步抓取所有平台，Leo 做跨平台整合分析"""
+    """/scan [關鍵詞] — 同步抓取所有平台 + 5個分析角度，Leo 做跨平台整合分析"""
     if update.effective_user.id != ALLOWED_USER_ID:
         return
     if not context.args:
@@ -3764,8 +3764,10 @@ async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "用法：`/scan [關鍵詞]`\n\n"
             "例子：\n"
             "`/scan 香港痛症管理`\n"
-            "`/scan 美容療程 客戶痛點`\n\n"
-            "Bot 會同步抓取 Google新聞 + 小紅書 + Threads + Facebook，Leo 做跨平台整合分析。",
+            "`/scan 美容療程`\n\n"
+            "自動抓取：Google新聞 + 小紅書 + Threads + Facebook\n"
+            "自動分析角度：客戶痛點 / 競品話術 / 真實評價 / 市場趨勢 / 客戶疑慮\n"
+            "結果直接可用於 PDF / Landing Page / PPT 製作。",
             parse_mode="Markdown"
         )
         return
@@ -3774,12 +3776,12 @@ async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     loop = asyncio.get_event_loop()
 
     await update.message.reply_text(
-        f"🔍 全平台掃描「{keyword}」\n"
-        f"同步抓取中：Google新聞 / 小紅書 / Threads / Facebook\n"
-        f"預計 30–60 秒..."
+        f"🔍 全平台掃描「{keyword}」\n\n"
+        f"平台：Google新聞 / 小紅書 / Threads / Facebook\n"
+        f"角度：客戶痛點 / 競品話術 / 真實評價 / 趨勢 / 疑慮\n\n"
+        f"預計 45–90 秒，完成後 Leo 整合分析..."
     )
 
-    # ── 並行抓取所有平台 ───────────────────────────────────────────
     _fail_kw = ["⚠️", "FAILED", "抓取失敗", "失敗", "Error", "error", "（無數據）", "未設定"]
 
     async def _fetch(name: str, fn, *args):
@@ -3790,57 +3792,78 @@ async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             return name, f"抓取失敗：{e}", True
 
-    tasks = await asyncio.gather(
-        _fetch("Google 新聞", scrape_google, keyword + " 香港 最新"),
-        _fetch("小紅書",     scrape_xhs,    keyword),
-        _fetch("Threads",   web_search,    f"site:threads.net {keyword}", 6),
-        _fetch("Facebook",  web_search,    f"site:facebook.com {keyword} 香港", 6),
+    # ── 並行抓取：平台 + 分析角度 ──────────────────────────────────
+    all_results = await asyncio.gather(
+        # 平台數據
+        _fetch("Google 新聞", scrape_google, f"{keyword} 香港 最新"),
+        _fetch("小紅書",      scrape_xhs,    keyword),
+        _fetch("Threads",    web_search,    f"site:threads.net {keyword}", 5),
+        _fetch("Facebook",   web_search,    f"site:facebook.com {keyword} 香港", 5),
+        # 分析角度（DuckDuckGo，免費穩定）
+        _fetch("客戶痛點",   web_search, f"{keyword} 問題 點解 香港 煩惱", 5),
+        _fetch("競品話術",   web_search, f"{keyword} 推廣 療程 香港 服務", 5),
+        _fetch("真實評價",   web_search, f"{keyword} 效果 評價 真實 用家", 5),
+        _fetch("2026趨勢",   web_search, f"{keyword} 2026 趨勢 香港 市場", 4),
+        _fetch("客戶疑慮",   web_search, f"{keyword} 貴 值唔值 效果 安全", 4),
     )
 
-    # ── 整理結果 + 狀態報告 ────────────────────────────────────────
-    status_lines = []
-    raw_parts = []
-    for name, result, failed in tasks:
-        if failed:
-            status_lines.append(f"❌ {name}")
+    # ── 分類狀態報告 ───────────────────────────────────────────────
+    platform_names = {"Google 新聞", "小紅書", "Threads", "Facebook"}
+    platform_lines, angle_lines = [], []
+    raw_platform, raw_angles = [], []
+
+    for name, result, failed in all_results:
+        tick = "✅" if not failed else "❌"
+        if name in platform_names:
+            platform_lines.append(f"{tick} {name}")
+            if not failed:
+                raw_platform.append(f"【{name}】\n{result[:800]}")
         else:
-            status_lines.append(f"✅ {name}")
-            raw_parts.append(f"【{name}】\n{result[:1500]}")
+            angle_lines.append(f"{tick} {name}")
+            if not failed:
+                raw_angles.append(f"【{name}】\n{result[:600]}")
 
     await update.message.reply_text(
-        "📊 抓取完成：\n" + "\n".join(status_lines)
+        f"📊 抓取完成：\n"
+        f"平台：{'  '.join(platform_lines)}\n"
+        f"角度：{'  '.join(angle_lines)}"
     )
 
-    if not raw_parts:
-        await update.message.reply_text("❌ 所有平台均抓取失敗，無法分析。請稍後再試。")
+    if not raw_platform and not raw_angles:
+        await update.message.reply_text("❌ 所有來源均失敗，無法分析。請稍後再試。")
         return
 
     # ── Leo 跨平台整合分析 ─────────────────────────────────────────
-    combined = "\n\n".join(raw_parts)
-    leo_prompt = f"""以下係「{keyword}」喺各平台嘅真實數據，請做跨平台整合分析。
+    combined = "\n\n".join(raw_platform + raw_angles)
+    leo_prompt = f"""以下係「{keyword}」嘅跨平台真實數據，請做深度整合分析。分析結果將用於製作 PDF、Landing Page 同 PPT，所以每個部分都要有可以直接引用嘅素材。
 
-{combined[:5000]}
+{combined[:6000]}
 
 請輸出：
 
-## 1. 各平台熱門話題
-（每個平台：用戶最關心咩、討論最多嘅角度）
+## 1. 客戶核心痛點（最重要）
+（直接引用或還原客戶原話，用佢哋自己嘅字眼——呢啲係文稿嘅 hook 素材）
 
-## 2. 跨平台共同趨勢（最重要）
-（多個平台同時出現嘅話題 = 真實市場信號，唔係噪音）
+## 2. 跨平台共同趨勢
+（多個平台同時出現嘅話題 = 真實市場信號）
 
-## 3. 市場空白位
-（有人問但冇人答、或競品完全冇做嘅角度）
+## 3. 競品話術解碼
+（競品點講、用咩字眼——Stanley 點差異化）
 
-## 4. 對 Stanley 業務嘅直接影響
-（痛症線 / 美容線各自嘅機會同風險）
+## 4. 社交證明素材
+（真實評價角度、客戶最常分享咩結果——Landing Page 用）
 
-## 5. 本週可立即行動 3 件事
-（具體到今日可以開始執行）
+## 5. 客戶最大疑慮 + 化解方向
+（佢哋最怕咩、最常問咩——PDF FAQ 同 Landing Page objection section 用）
 
-廣東話，有數據，有洞察，直接講結論。"""
+## 6. 市場空白位
+（有人問但競品唔做嘅角度——Stanley 可以搶佔）
 
-    await update.message.reply_text("🧠 Leo 分析緊，稍等...")
+## 7. 本週立即可行動 3 件事
+
+廣東話，有數據有原話，直接可以剪下貼入成品。"""
+
+    await update.message.reply_text("🧠 Leo 整合分析緊，稍等...")
     _, leo_result = await loop.run_in_executor(executor, agent_call, "Leo", leo_prompt)
     await send_with_avatar(update, "Leo", leo_result)
 
