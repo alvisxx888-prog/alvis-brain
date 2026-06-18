@@ -379,7 +379,14 @@ AMY_DISPATCH_SYSTEM = """你係 Amy，Stanley（Alvis）團隊嘅首席秘書同
 製作師（Phase 3，永遠最後出動）：
 - Anna：所有內容產出（IG帖/Reels/廣告文案/PDF/Landing Page/幻燈片）
 
-【分派決策樹】
+【🔴 第一關：先問清楚，唔好猜】
+以下情況必須用 clarify，唔可以派員工或執行 action：
+- 指令冇具體目標（冇帳號名、冇關鍵詞、冇明確成品類型）
+- 指令可以解讀成 2種或以上完全不同嘅任務
+- 例子：「幫我整個嘢出嚟」「整一份」「分析下」「做嘢」→ 必須 clarify
+clarify 格式：俾 Stanley 兩個具體選項，唔問開放問題
+
+【第二關：分派決策樹（只有指令清晰先到呢步）】
 ① 簡單對話/問候/確認 → Amy 直接回答（direct_reply）
 ② 需要數據/市場情報 → 先派 Leo（必須）；涉及AI → 加 Kai
 ③ 需要策略/話術/廣告/數據分析 → 派對應策略師；如已有研究數據，系統自動傳俾佢哋
@@ -403,14 +410,17 @@ AMY_DISPATCH_SYSTEM = """你係 Amy，Stanley（Alvis）團隊嘅首席秘書同
 
 必須輸出純 JSON，唔可以有任何其他文字：
 
+需要問清楚（指令模糊）：
+{"clarify": "你係想要：\nA) [具體選項A]\nB) [具體選項B]\n係邊個？", "amy_message": null, "actions": [], "dispatch": [], "direct_reply": null}
+
 有 action：
-{"amy_message": "Amy嘅話", "actions": [{"type": "scrape_ig", "param": "帳號名"}], "dispatch": [], "direct_reply": null}
+{"clarify": null, "amy_message": "Amy嘅話", "actions": [{"type": "scrape_ig", "param": "帳號名"}], "dispatch": [], "direct_reply": null}
 
 有員工分派：
-{"amy_message": "Amy嘅話", "actions": [], "dispatch": [{"agent": "AgentName", "task": "具體任務描述，包含足夠上下文"}], "direct_reply": null}
+{"clarify": null, "amy_message": "Amy嘅話", "actions": [], "dispatch": [{"agent": "AgentName", "task": "具體任務描述，包含足夠上下文"}], "direct_reply": null}
 
 Amy直接回答：
-{"amy_message": null, "actions": [], "dispatch": [], "direct_reply": "Amy直接回覆"}
+{"clarify": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": "Amy直接回覆"}
 
 action types: scrape_ig / scrape_threads / scrape_fb / scrape_xhs / scrape_web / scrape_news / product_research"""
 
@@ -3072,6 +3082,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         history.append({"role": "assistant", "content": raw})
         save_history(conversation_history)
         await send_long(update, f"{AGENT_EMOJI['Amy']} Amy：{raw}")
+        return
+
+    if data.get("clarify"):
+        clarify_msg = f"{AGENT_EMOJI['Amy']} Amy：{data['clarify']}"
+        history.append({"role": "user", "content": user_message})
+        history.append({"role": "assistant", "content": clarify_msg})
+        save_history(conversation_history)
+        await send_long(update, clarify_msg)
         return
 
     if data.get("direct_reply"):
