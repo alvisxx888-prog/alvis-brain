@@ -1344,6 +1344,129 @@ def extract_file_content(file_bytes: bytes, mime: str, filename: str = "") -> st
     return ""
 
 
+# ── Agent Avatar Cards ────────────────────────────────────────────────────────
+AGENT_AVATAR_DIR = "/root/claude-bot/avatars"
+
+AGENT_AVATAR_DATA = {
+    "Amy":   {"bg": (255, 200, 220), "hair": (220,  60, 120), "clothes": (160,  80, 180), "role": "首席秘書"},
+    "Anna":  {"bg": (255, 235, 190), "hair": (200, 110,  20), "clothes": (230, 140,  30), "role": "內容創作師"},
+    "Leo":   {"bg": (195, 220, 255), "hair": ( 40,  60, 160), "clothes": ( 60, 100, 210), "role": "情報分析師"},
+    "Kai":   {"bg": (195, 245, 210), "hair": ( 20, 140,  55), "clothes": ( 35, 170,  75), "role": "AI 情報員"},
+    "Toxic": {"bg": (255, 255, 190), "hair": (190, 150,   0), "clothes": (215, 175,   0), "role": "自動化工程師"},
+    "Small": {"bg": (220, 200, 255), "hair": (100,  30, 165), "clothes": (125,  55, 185), "role": "商業策略官"},
+    "Tony":  {"bg": (255, 210, 200), "hair": (155,  30,  20), "clothes": (195,  55,  40), "role": "轉化專員"},
+    "Rex":   {"bg": (255, 225, 185), "hair": (155,  75,   0), "clothes": (195, 100,  10), "role": "廣告投放"},
+    "Mia":   {"bg": (195, 245, 245), "hair": (  0, 115, 115), "clothes": (  0, 155, 155), "role": "數據分析師"},
+}
+
+AGENT_EMOJI_LABEL = {
+    "Amy": "👩‍💼", "Anna": "🎨", "Leo": "📊", "Kai": "🤖",
+    "Toxic": "⚡", "Small": "🧠", "Tony": "🤝", "Rex": "📢", "Mia": "📈",
+}
+
+def _make_agent_avatar(agent_name: str) -> bytes:
+    """Generate pixel-art agent card: draw at 1/4 res, scale up 4× with NEAREST."""
+    from PIL import Image, ImageDraw, ImageFont
+    import io as _io
+
+    SCALE = 4
+    W, H = 50, 68
+    d = AGENT_AVATAR_DATA.get(agent_name, AGENT_AVATAR_DATA["Amy"])
+    bg, hair, clothes = d["bg"], d["hair"], d["clothes"]
+    SKIN  = (252, 218, 168)
+    EYE   = (40, 28, 16)
+    MOUTH = (210, 75, 75)
+    SHOE  = (55, 40, 25)
+    PANTS = tuple(max(0, c - 40) for c in clothes)
+    DARK  = tuple(max(0, c - 28) for c in bg)
+    DARK_C = tuple(max(0, c - 28) for c in clothes)
+
+    img = Image.new("RGB", (W, H), bg)
+    draw = ImageDraw.Draw(img)
+    draw.rectangle([0, 0, W - 1, H - 1], outline=DARK, width=1)
+
+    cx = W // 2  # 25
+
+    # Hair blob
+    draw.ellipse([cx - 9, 2, cx + 9, 14], fill=hair)
+    # Face oval
+    draw.ellipse([cx - 8, 7, cx + 8, 21], fill=SKIN)
+    # Hair sides
+    draw.rectangle([cx - 9, 8, cx - 7, 15], fill=hair)
+    draw.rectangle([cx + 7, 8, cx + 9, 15], fill=hair)
+    # Eyes
+    draw.point([cx - 4, 13], fill=EYE)
+    draw.point([cx + 4, 13], fill=EYE)
+    # Mouth
+    draw.rectangle([cx - 2, 17, cx + 2, 17], fill=MOUTH)
+
+    # Body
+    by = 23
+    draw.rectangle([cx - 7, by, cx + 7, by + 13], fill=clothes)
+    # Arms
+    draw.rectangle([cx - 10, by + 1, cx - 8, by + 10], fill=clothes)
+    draw.rectangle([cx + 8,  by + 1, cx + 10, by + 10], fill=clothes)
+    # Hands
+    draw.ellipse([cx - 12, by + 9, cx - 7, by + 13], fill=SKIN)
+    draw.ellipse([cx + 7,  by + 9, cx + 12, by + 13], fill=SKIN)
+    # Collar
+    draw.rectangle([cx - 3, by, cx + 3, by + 5], fill=DARK_C)
+
+    # Legs
+    ly = by + 14
+    draw.rectangle([cx - 6, ly, cx - 2, ly + 11], fill=PANTS)
+    draw.rectangle([cx + 2, ly, cx + 6, ly + 11], fill=PANTS)
+    # Shoes
+    sy = ly + 10
+    draw.rectangle([cx - 8, sy, cx - 1, sy + 3], fill=SHOE)
+    draw.rectangle([cx + 1, sy, cx + 8, sy + 3], fill=SHOE)
+
+    # Scale up → pixel art effect
+    img = img.resize((W * SCALE, H * SCALE), Image.NEAREST)
+    draw = ImageDraw.Draw(img)
+    FW, FH = W * SCALE, H * SCALE
+
+    # Footer bar
+    footer_bg = tuple(max(0, c - 50) for c in bg)
+    draw.rectangle([0, FH - 46, FW, FH], fill=footer_bg)
+
+    try:
+        name_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 16)
+        role_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 11)
+    except Exception:
+        name_font = role_font = ImageFont.load_default()
+
+    draw.text((FW // 2, FH - 32), agent_name,      font=name_font, fill=(255, 255, 255), anchor="mm")
+    draw.text((FW // 2, FH - 14), d.get("role",""), font=role_font, fill=(200, 200, 200), anchor="mm")
+
+    buf = _io.BytesIO()
+    img.save(buf, "PNG")
+    return buf.getvalue()
+
+
+async def send_with_avatar(update: Update, agent_name: str, text: str):
+    """Send pixel-art agent card, then the text response."""
+    os.makedirs(AGENT_AVATAR_DIR, exist_ok=True)
+    avatar_path = os.path.join(AGENT_AVATAR_DIR, f"{agent_name}.png")
+    loop = asyncio.get_event_loop()
+
+    if not os.path.exists(avatar_path):
+        img_bytes = await loop.run_in_executor(executor, _make_agent_avatar, agent_name)
+        with open(avatar_path, "wb") as f:
+            f.write(img_bytes)
+
+    emoji = AGENT_EMOJI_LABEL.get(agent_name, "")
+    role  = AGENT_AVATAR_DATA.get(agent_name, {}).get("role", "")
+    caption = f"{emoji} *{agent_name}* — {role}"
+    try:
+        with open(avatar_path, "rb") as f:
+            await update.message.reply_photo(photo=f, caption=caption, parse_mode="Markdown")
+    except Exception as e:
+        logger.warning(f"Avatar send failed ({agent_name}): {e}")
+
+    await send_long(update, text)
+
+
 _INTEL_INJECT_AGENTS = {"Anna", "Tony", "Rex", "Leo", "Small"}
 
 def agent_call(agent_name: str, task: str) -> tuple[str, str]:
@@ -1571,7 +1694,7 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"輸出：① 帳號整體定位 ② 爆款帖文規律 ③ 對 Stanley 美容/痛症業務嘅具體啟示 ④ 可以抄嘅策略"
         )
         _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
-        await send_long(update, f"📊 Leo 競品分析：\n{analysis}")
+        await send_with_avatar(update, "Leo", analysis)
         _save_analysis(analysis, f"IG @{username} 競品分析")
         await update.message.reply_text(_next_steps)
 
@@ -1585,7 +1708,7 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         leo_task = f"分析以下網頁內容，提出對 Stanley 業務有用嘅洞察：\n\n{result[:3000]}"
         _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
-        await send_long(update, f"📊 Leo 分析：\n{analysis}")
+        await send_with_avatar(update, "Leo", analysis)
         _save_analysis(analysis, f"網頁分析 {url}")
         await update.message.reply_text(_next_steps)
 
@@ -1602,7 +1725,7 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"輸出：① 爆款標題規律 ② 熱門話題角度 ③ Stanley 可以用嘅3個文案方向"
         )
         _, analysis = await loop.run_in_executor(executor, agent_call, "Anna", anna_task)
-        await send_long(update, f"🎨 Anna 分析：\n{analysis}")
+        await send_with_avatar(update, "Anna", analysis)
         _save_analysis(analysis, f"小紅書「{query}」趨勢分析")
         await update.message.reply_text(_next_steps)
 
@@ -1616,7 +1739,7 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         leo_task = f"以下係「{query}」嘅最新搜尋結果，請分析對 Stanley 業務嘅影響同機會：\n\n{result[:3000]}"
         _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
-        await send_long(update, f"📊 Leo 分析：\n{analysis}")
+        await send_with_avatar(update, "Leo", analysis)
         _save_analysis(analysis, f"新聞搜尋「{query}」分析")
         await update.message.reply_text(_next_steps)
 
@@ -1633,7 +1756,7 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"輸出：① 帳號內容定位 ② 爆款帖文規律 ③ 對 Stanley 業務嘅具體啟示 ④ 可以借鑒嘅策略"
         )
         _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
-        await send_long(update, f"📊 Leo 競品分析：\n{analysis}")
+        await send_with_avatar(update, "Leo", analysis)
         _save_analysis(analysis, f"Threads @{username} 競品分析")
         await update.message.reply_text(_next_steps)
 
@@ -1647,7 +1770,7 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"輸出：① 專頁內容定位 ② 爆款帖文規律 ③ 對 Stanley 業務嘅具體啟示 ④ 可以借鑒嘅策略"
         )
         _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
-        await send_long(update, f"📊 Leo 競品分析：\n{analysis}")
+        await send_with_avatar(update, "Leo", analysis)
         _save_analysis(analysis, f"Facebook @{page} 競品分析")
         await update.message.reply_text(_next_steps)
 
@@ -2983,7 +3106,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"輸出：① 專頁內容定位 ② 爆款帖文規律 ③ 對 Stanley 業務嘅具體啟示 ④ 可以借鑒嘅策略"
             )
             _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
-            await send_long(update, f"📊 Leo 競品分析：\n{analysis}")
+            await send_with_avatar(update, "Leo", analysis)
             action_context += f"【Facebook @{param} 競品分析 by Leo】\n{analysis[:3000]}\n\n"
         elif atype == "scrape_threads":
             await update.message.reply_text(f"🧵 抓取 Threads @{param} 中...")
@@ -2994,7 +3117,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"輸出：① 帳號內容定位 ② 爆款帖文規律 ③ 對 Stanley 業務嘅具體啟示 ④ 可以借鑒嘅策略"
             )
             _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
-            await send_long(update, f"📊 Leo 競品分析：\n{analysis}")
+            await send_with_avatar(update, "Leo", analysis)
             action_context += f"【Threads @{param} 競品分析 by Leo】\n{analysis[:3000]}\n\n"
         elif atype == "scrape_ig":
             await update.message.reply_text(f"📡 抓取 IG @{param} 中（約30-60秒）...")
@@ -3011,7 +3134,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"輸出：① 帳號整體定位 ② 爆款帖文規律 ③ 對 Stanley 美容/痛症業務嘅具體啟示 ④ 可以抄嘅策略"
             )
             _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
-            await send_long(update, f"📊 Leo 競品分析：\n{analysis}")
+            await send_with_avatar(update, "Leo", analysis)
             action_context += f"【IG @{param} 原始數據】\n{result[:2000]}\n\n【Leo 競品分析】\n{analysis[:3000]}\n\n"
         elif atype == "scrape_xhs":
             await update.message.reply_text(f"📕 抓取小紅書「{param}」中（約30-60秒）...")
@@ -3022,7 +3145,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"輸出：① 爆款標題規律 ② 熱門話題角度 ③ Stanley 可以用嘅3個文案方向"
             )
             _, analysis = await loop.run_in_executor(executor, agent_call, "Anna", anna_task)
-            await send_long(update, f"🎨 Anna 分析：\n{analysis}")
+            await send_with_avatar(update, "Anna", analysis)
             action_context += f"【小紅書「{param}」趨勢分析 by Anna】\n{analysis[:3000]}\n\n"
         elif atype == "scrape_web":
             await update.message.reply_text(f"🌐 抓取 {param} 中...")
@@ -3035,7 +3158,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await send_long(update, result)
             leo_task = f"以下係「{param}」嘅最新搜尋結果，請分析對 Stanley 業務嘅影響同機會：\n\n{result[:3000]}"
             _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
-            await send_long(update, f"📊 Leo 分析：\n{analysis}")
+            await send_with_avatar(update, "Leo", analysis)
             action_context += f"【新聞「{param}」分析 by Leo】\n{analysis[:3000]}\n\n"
         elif atype == "product_research":
             topic = param
@@ -3070,7 +3193,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 loop.run_in_executor(executor, agent_call, "Small", small_task),
             )
             await send_long(update, f"📊 Leo — 市場分析：\n{market_analysis}")
-            await send_long(update, f"🧠 Small — 產品機會：\n{product_ideas}")
+            await send_with_avatar(update, "Small", product_ideas)
             action_context += f"【市場研究「{topic}」— Leo 市場分析】\n{market_analysis[:2000]}\n\n【Small 產品機會】\n{product_ideas[:2000]}\n\n"
 
     full_results = ""
@@ -3523,17 +3646,13 @@ Leo 分析：
     # ── 輸出完整報告 ────────────────────────────────────────────────
     ig_count = len(ig_list)
     maps_count = len(maps_list)
-    report = (
-        f"🕵️ **競品情報報告**\n"
-        f"抓取來源：{ig_count}個IG + {maps_count}個Maps + {len(xhs_list)}個小紅書關鍵詞\n"
-        f"━━━━━━━━━━━━━━\n\n"
-        f"📊 **Leo — 市場空白位分析**\n{leo_result}\n\n"
-        f"━━━━━━━━━━━━━━\n\n"
-        f"🧠 **Small — 策略建議**\n{small_result}"
+    await update.message.reply_text(
+        f"🕵️ *競品情報報告*\n"
+        f"抓取來源：{ig_count}個IG + {maps_count}個Maps + {len(xhs_list)}個小紅書關鍵詞",
+        parse_mode="Markdown"
     )
-
-    for i in range(0, len(report), 4096):
-        await update.message.reply_text(report[i:i+4096])
+    await send_with_avatar(update, "Leo", leo_result)
+    await send_with_avatar(update, "Small", small_result)
 
 
 # ── 客戶智識庫指令 ────────────────────────────────────────────────────────────────
