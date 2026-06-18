@@ -3753,6 +3753,98 @@ async def cmd_removedata(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ 編號要係數字，例如：`/removedata quote 2`", parse_mode="Markdown")
 
 
+# ── 全平台掃描 /scan ──────────────────────────────────────────────────────────────
+
+async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/scan [關鍵詞] — 同步抓取所有平台，Leo 做跨平台整合分析"""
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+    if not context.args:
+        await update.message.reply_text(
+            "用法：`/scan [關鍵詞]`\n\n"
+            "例子：\n"
+            "`/scan 香港痛症管理`\n"
+            "`/scan 美容療程 客戶痛點`\n\n"
+            "Bot 會同步抓取 Google新聞 + 小紅書 + Threads + Facebook，Leo 做跨平台整合分析。",
+            parse_mode="Markdown"
+        )
+        return
+
+    keyword = " ".join(context.args).strip()
+    loop = asyncio.get_event_loop()
+
+    await update.message.reply_text(
+        f"🔍 全平台掃描「{keyword}」\n"
+        f"同步抓取中：Google新聞 / 小紅書 / Threads / Facebook\n"
+        f"預計 30–60 秒..."
+    )
+
+    # ── 並行抓取所有平台 ───────────────────────────────────────────
+    _fail_kw = ["⚠️", "FAILED", "抓取失敗", "失敗", "Error", "error", "（無數據）", "未設定"]
+
+    async def _fetch(name: str, fn, *args):
+        try:
+            result = await loop.run_in_executor(executor, fn, *args)
+            failed = any(k in (result or "") for k in _fail_kw) or not (result or "").strip()
+            return name, result or "", failed
+        except Exception as e:
+            return name, f"抓取失敗：{e}", True
+
+    tasks = await asyncio.gather(
+        _fetch("Google 新聞", scrape_google, keyword + " 香港 最新"),
+        _fetch("小紅書",     scrape_xhs,    keyword),
+        _fetch("Threads",   web_search,    f"site:threads.net {keyword}", 6),
+        _fetch("Facebook",  web_search,    f"site:facebook.com {keyword} 香港", 6),
+    )
+
+    # ── 整理結果 + 狀態報告 ────────────────────────────────────────
+    status_lines = []
+    raw_parts = []
+    for name, result, failed in tasks:
+        if failed:
+            status_lines.append(f"❌ {name}")
+        else:
+            status_lines.append(f"✅ {name}")
+            raw_parts.append(f"【{name}】\n{result[:1500]}")
+
+    await update.message.reply_text(
+        "📊 抓取完成：\n" + "\n".join(status_lines)
+    )
+
+    if not raw_parts:
+        await update.message.reply_text("❌ 所有平台均抓取失敗，無法分析。請稍後再試。")
+        return
+
+    # ── Leo 跨平台整合分析 ─────────────────────────────────────────
+    combined = "\n\n".join(raw_parts)
+    leo_prompt = f"""以下係「{keyword}」喺各平台嘅真實數據，請做跨平台整合分析。
+
+{combined[:5000]}
+
+請輸出：
+
+## 1. 各平台熱門話題
+（每個平台：用戶最關心咩、討論最多嘅角度）
+
+## 2. 跨平台共同趨勢（最重要）
+（多個平台同時出現嘅話題 = 真實市場信號，唔係噪音）
+
+## 3. 市場空白位
+（有人問但冇人答、或競品完全冇做嘅角度）
+
+## 4. 對 Stanley 業務嘅直接影響
+（痛症線 / 美容線各自嘅機會同風險）
+
+## 5. 本週可立即行動 3 件事
+（具體到今日可以開始執行）
+
+廣東話，有數據，有洞察，直接講結論。"""
+
+    await update.message.reply_text("🧠 Leo 分析緊，稍等...")
+    _, leo_result = await loop.run_in_executor(executor, agent_call, "Leo", leo_prompt)
+    await send_with_avatar(update, "Leo", leo_result)
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 async def post_init(app):
@@ -3789,6 +3881,7 @@ def main():
     app.add_handler(CommandHandler("add", cmd_add))
     app.add_handler(CommandHandler("mydata", cmd_mydata))
     app.add_handler(CommandHandler("removedata", cmd_removedata))
+    app.add_handler(CommandHandler("scan", cmd_scan))
     app.add_handler(CallbackQueryHandler(handle_followup_callback, pattern="^followup:"))
     app.add_handler(CallbackQueryHandler(handle_report_action_callback, pattern="^report_action:"))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
