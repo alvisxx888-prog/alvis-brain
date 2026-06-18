@@ -758,11 +758,11 @@ def scrape_instagram(username: str, max_posts: int = 12) -> str:
         except Exception as e:
             logger.warning(f"Instaloader error: {e}; using web search fallback")
 
-    # ── Fallback 2：DuckDuckGo 搜尋 ────────────────────────────────────────
-    fallback = web_search(f"Instagram {username} 最新帖文 內容 2024 2025", 6)
     return (
-        f"⚠️ 無法直接抓取 @{username} IG（Apify 及 Instaloader 均失敗）。\n"
-        f"以下係網絡搜尋 fallback（準確度較低）：\n\n{fallback}"
+        f"⚠️IG_FETCH_FAILED：無法直接抓取 @{username} IG。\n"
+        f"Apify 及 Instaloader 均失敗。\n"
+        f"可能原因：Apify credits 不足 / IG 封鎖。\n"
+        f"請去 apify.com → Billing 確認 credits，或稍後再試。"
     )
 
 def scrape_facebook(page_name: str, max_posts: int = 10) -> str:
@@ -1458,7 +1458,7 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
     loop = asyncio.get_event_loop()
 
     def _scrape_failed(r: str) -> bool:
-        return any(kw in r for kw in ["失敗", "未設定", "不到資料", "Error", "error", "抓取失敗"])
+        return any(kw in r for kw in ["失敗", "未設定", "不到資料", "Error", "error", "抓取失敗", "⚠️", "FAILED"])
 
     def _save_analysis(analysis: str, label: str):
         """分析完成後儲存到 last_content + history，方便後續生成用"""
@@ -1478,12 +1478,15 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if subcmd == "ig" and len(args) >= 2:
         username = args[1].lstrip("@")
-        await update.message.reply_text(f"📡 用 Instaloader 抓取 IG @{username} 中（約30-60秒）...")
+        await update.message.reply_text(f"📡 抓取 IG @{username} 中（約30-60秒）...")
         result = await loop.run_in_executor(executor, scrape_instagram, username)
-        if _scrape_failed(result):
-            await update.message.reply_text("⚠️ Instaloader 未能直接抓取，改用網絡搜尋 fallback...")
-            result = web_search(f"Instagram {username} 最新帖文 內容 美容", 6)
         await send_long(update, result)
+        if _scrape_failed(result):
+            await update.message.reply_text(
+                "❌ IG 數據抓取失敗，Leo 分析已取消（節省 tokens）。\n"
+                "請去 apify.com → Billing 確認 credits 充足後再試。"
+            )
+            return
         leo_task = (
             f"以下係競品 IG 帳號 @{username} 嘅最新帖文數據，請做完整競品分析：\n\n{result}\n\n"
             f"輸出：① 帳號整體定位 ② 爆款帖文規律 ③ 對 Stanley 美容/痛症業務嘅具體啟示 ④ 可以抄嘅策略"
@@ -1497,10 +1500,10 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
         url = args[1]
         await update.message.reply_text(f"📡 抓取 {url} 中...")
         result = await loop.run_in_executor(executor, scrape_webpage, url)
-        if _scrape_failed(result):
-            await update.message.reply_text("⚠️ Instaloader 未能直接抓取，改用網絡搜尋 fallback...")
-            result = web_search(url, 5)
         await send_long(update, result)
+        if _scrape_failed(result):
+            await update.message.reply_text("❌ 網頁抓取失敗，Leo 分析取消（節省 tokens）。")
+            return
         leo_task = f"分析以下網頁內容，提出對 Stanley 業務有用嘅洞察：\n\n{result[:3000]}"
         _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
         await send_long(update, f"📊 Leo 分析：\n{analysis}")
@@ -1511,10 +1514,10 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = " ".join(args[1:])
         await update.message.reply_text(f"📕 抓取小紅書「{query}」中（約30-60秒）...")
         result = await loop.run_in_executor(executor, scrape_xhs, query)
-        if _scrape_failed(result):
-            await update.message.reply_text("⚠️ Instaloader 未能直接抓取，改用網絡搜尋 fallback...")
-            result = web_search(f"小紅書 {query} 帖文 推薦", 6)
         await send_long(update, result)
+        if _scrape_failed(result):
+            await update.message.reply_text("❌ 小紅書抓取失敗，Anna 分析取消（節省 tokens）。\n請確認 Apify credits 充足。")
+            return
         anna_task = (
             f"以下係小紅書「{query}」嘅帖文內容，請分析趨勢：\n\n{result[:3000]}\n\n"
             f"輸出：① 爆款標題規律 ② 熱門話題角度 ③ Stanley 可以用嘅3個文案方向"
@@ -1528,9 +1531,10 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = " ".join(args[1:])
         await update.message.reply_text(f"🔍 搜尋「{query}」新聞中...")
         result = await loop.run_in_executor(executor, scrape_google, query)
-        if _scrape_failed(result):
-            result = web_search(query + " 最新消息", 6)
         await send_long(update, result)
+        if _scrape_failed(result):
+            await update.message.reply_text("❌ 新聞搜尋失敗，Leo 分析取消（節省 tokens）。")
+            return
         leo_task = f"以下係「{query}」嘅最新搜尋結果，請分析對 Stanley 業務嘅影響同機會：\n\n{result[:3000]}"
         _, analysis = await loop.run_in_executor(executor, agent_call, "Leo", leo_task)
         await send_long(update, f"📊 Leo 分析：\n{analysis}")
@@ -1541,10 +1545,10 @@ async def cmd_scrape(update: Update, context: ContextTypes.DEFAULT_TYPE):
         username = args[1].lstrip("@")
         await update.message.reply_text(f"🧵 抓取 Threads @{username} 中（約30-60秒）...")
         result = await loop.run_in_executor(executor, scrape_threads, username)
-        if _scrape_failed(result):
-            await update.message.reply_text("⚠️ Instaloader 未能直接抓取，改用網絡搜尋 fallback...")
-            result = web_search(f"Threads {username} 最新帖文 內容", 6)
         await send_long(update, result)
+        if _scrape_failed(result):
+            await update.message.reply_text("❌ Threads 抓取失敗，Leo 分析取消（節省 tokens）。\n請確認 Apify credits 充足。")
+            return
         leo_task = (
             f"以下係競品 Threads 帳號 @{username} 嘅最新內容，請做競品分析：\n\n{result}\n\n"
             f"輸出：① 帳號內容定位 ② 爆款帖文規律 ③ 對 Stanley 業務嘅具體啟示 ④ 可以借鑒嘅策略"
@@ -2889,7 +2893,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("⚠️ Apify 未設定，請先設定 APIFY_API_TOKEN（見 /status）")
             continue
         def _apify_failed(r: str) -> bool:
-            return any(kw in r for kw in ["失敗", "未設定", "不到資料", "Error", "error"])
+            return any(kw in r for kw in ["失敗", "未設定", "不到資料", "Error", "error", "⚠️", "FAILED"])
 
         if atype == "scrape_fb":
             await update.message.reply_text(f"📘 抓取 Facebook @{param} 中...")
@@ -2917,6 +2921,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(f"📡 抓取 IG @{param} 中（約30-60秒）...")
             result = await loop.run_in_executor(executor, scrape_instagram, param)
             await send_long(update, result)
+            if _apify_failed(result):
+                await update.message.reply_text(
+                    "❌ IG 數據抓取失敗，Leo 分析已取消（節省 tokens）。\n"
+                    "請去 apify.com → Billing 確認 credits 充足後再試。"
+                )
+                continue
             leo_task = (
                 f"以下係競品 IG 帳號 @{param} 嘅最新帖文數據，請做完整競品分析：\n\n{result}\n\n"
                 f"輸出：① 帳號整體定位 ② 爆款帖文規律 ③ 對 Stanley 美容/痛症業務嘅具體啟示 ④ 可以抄嘅策略"
@@ -3324,25 +3334,51 @@ async def cmd_intel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await asyncio.gather(*scrape_tasks)
 
-    # ── 整合所有原始數據 ────────────────────────────────────────────
-    raw_data = ""
-    if any(k.startswith("ig_") for k in collected):
-        raw_data += "【競品 IG 帖文數據】\n"
-        for k, v in collected.items():
+    # ── 過濾失敗嘅抓取，唔把廢數據餵俾員工 ──────────────────────────
+    _fail_markers = ["⚠️", "FAILED", "抓取失敗", "（無數據）"]
+    failed_keys = [k for k, v in collected.items() if any(m in v for m in _fail_markers)]
+    ok_keys = [k for k in collected if k not in failed_keys]
+
+    if failed_keys:
+        fail_names = []
+        for k in failed_keys:
             if k.startswith("ig_"):
-                raw_data += f"\n--- @{k[3:]} ---\n{v[:1500]}\n"
+                fail_names.append(f"IG @{k[3:]}")
+            elif k.startswith("maps_"):
+                fail_names.append(f"Maps: {k[5:]}")
+            elif k.startswith("xhs_"):
+                fail_names.append(f"小紅書: {k[4:]}")
+            else:
+                fail_names.append(k)
+        await update.message.reply_text(
+            "⚠️ 以下來源抓取失敗，已略過（節省 tokens）：\n" +
+            "\n".join(f"• {n}" for n in fail_names) +
+            "\n\n如係 IG/小紅書，請確認 Apify credits 是否充足。"
+        )
 
-    if any(k.startswith("maps_") for k in collected):
+    if not ok_keys:
+        await update.message.reply_text("❌ 所有數據來源均抓取失敗，分析取消。\n請確認 Apify credits 充足後再試。")
+        return
+
+    # ── 整合成功嘅原始數據 ──────────────────────────────────────────
+    raw_data = ""
+    if any(k.startswith("ig_") for k in ok_keys):
+        raw_data += "【競品 IG 帖文數據】\n"
+        for k in ok_keys:
+            if k.startswith("ig_"):
+                raw_data += f"\n--- @{k[3:]} ---\n{collected[k][:1500]}\n"
+
+    if any(k.startswith("maps_") for k in ok_keys):
         raw_data += "\n\n【Google Maps 評論（競品差評 = 市場空白位）】\n"
-        for k, v in collected.items():
+        for k in ok_keys:
             if k.startswith("maps_"):
-                raw_data += f"\n--- {k[5:]} ---\n{v[:1500]}\n"
+                raw_data += f"\n--- {k[5:]} ---\n{collected[k][:1500]}\n"
 
-    if any(k.startswith("xhs_") for k in collected):
+    if any(k.startswith("xhs_") for k in ok_keys):
         raw_data += "\n\n【小紅書趨勢內容】\n"
-        for k, v in collected.items():
+        for k in ok_keys:
             if k.startswith("xhs_"):
-                raw_data += f"\n--- 關鍵詞：{k[4:]} ---\n{v[:1000]}\n"
+                raw_data += f"\n--- 關鍵詞：{k[4:]} ---\n{collected[k][:1000]}\n"
 
     # ── Leo 做市場空白位分析 ────────────────────────────────────────
     await update.message.reply_text("📊 數據收集完成！Leo 分析中...")
