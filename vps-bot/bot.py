@@ -573,6 +573,7 @@ dreamteam_last_synthesis: dict[int, dict] = {}  # {user_id: {"question":..,"synt
 
 REPORT_BUFFER_FILE = "/root/claude-bot/report_buffer.json"
 COMPETITORS_FILE = "/root/claude-bot/competitors.json"
+BRAND_INTEL_FILE = "/root/claude-bot/brand_intel.json"
 pending_report_entry: dict[int, dict] = {}  # {user_id: {"agent":..,"question":..,"answer":..}}
 
 DEFAULT_COMPETITORS = {
@@ -603,6 +604,78 @@ def save_competitors(data: dict):
         logger.error(f"Save competitors error: {e}")
 
 competitors_db: dict = load_competitors()
+
+# ── 客戶智識庫 ──────────────────────────────────────────────────────────────────
+DEFAULT_BRAND_INTEL: dict[str, list] = {
+    "quote":     [],  # 客戶原話 / 痛點描述
+    "hook":      [],  # 已驗證有效嘅開場白
+    "objection": [],  # 常見反對意見 + 應對話術
+    "win":       [],  # 成功案例
+    "gap":       [],  # 競品空白位
+}
+
+def load_brand_intel() -> dict:
+    try:
+        if os.path.exists(BRAND_INTEL_FILE):
+            with open(BRAND_INTEL_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for k in DEFAULT_BRAND_INTEL:
+                    data.setdefault(k, [])
+                return data
+    except Exception:
+        pass
+    return {k: list(v) for k, v in DEFAULT_BRAND_INTEL.items()}
+
+def save_brand_intel(data: dict):
+    try:
+        with open(BRAND_INTEL_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Save brand_intel error: {e}")
+
+brand_intel_db: dict = load_brand_intel()
+
+_INTEL_CATEGORY_ALIASES = {
+    "quote": "quote", "客戶原話": "quote", "原話": "quote", "痛點": "quote",
+    "hook": "hook", "開場白": "hook", "鉤子": "hook",
+    "objection": "objection", "反對": "objection", "反對意見": "objection", "objections": "objection",
+    "win": "win", "案例": "win", "成功案例": "win", "wins": "win",
+    "gap": "gap", "空白位": "gap", "競品空白": "gap", "機會": "gap",
+}
+
+_INTEL_CATEGORY_LABELS = {
+    "quote":     "📣 客戶原話",
+    "hook":      "🎣 有效 Hook",
+    "objection": "🛡 反對意見應對",
+    "win":       "🏆 成功案例",
+    "gap":       "🔍 競品空白位",
+}
+
+def _build_brand_intel_block() -> str:
+    """把智識庫整合成一段 prompt 前綴，供員工使用"""
+    db = brand_intel_db
+    parts = []
+    if db.get("quote"):
+        parts.append("【客戶原話（必須整合入內容，用佢哋自己嘅字眼）】\n" +
+                     "\n".join(f"• {q}" for q in db["quote"]))
+    if db.get("hook"):
+        parts.append("【已驗證有效 Hook（可直接使用或改編）】\n" +
+                     "\n".join(f"• {h}" for h in db["hook"]))
+    if db.get("objection"):
+        parts.append("【常見反對意見 + 應對（預先化解）】\n" +
+                     "\n".join(f"• {o}" for o in db["objection"]))
+    if db.get("win"):
+        parts.append("【成功案例（可引用作社交證明）】\n" +
+                     "\n".join(f"• {w}" for w in db["win"]))
+    if db.get("gap"):
+        parts.append("【競品空白位（Stanley 可搶佔嘅角度）】\n" +
+                     "\n".join(f"• {g}" for g in db["gap"]))
+    if not parts:
+        return ""
+    return (
+        "【品牌智識庫 — 以下係真實數據，製作成品時必須整合，唔可以忽略】\n\n" +
+        "\n\n".join(parts)
+    )
 
 def load_report_buffer() -> dict:
     try:
@@ -1271,7 +1344,13 @@ def extract_file_content(file_bytes: bytes, mime: str, filename: str = "") -> st
     return ""
 
 
+_INTEL_INJECT_AGENTS = {"Anna", "Tony", "Rex", "Leo", "Small"}
+
 def agent_call(agent_name: str, task: str) -> tuple[str, str]:
+    if agent_name in _INTEL_INJECT_AGENTS:
+        intel_block = _build_brand_intel_block()
+        if intel_block:
+            task = intel_block + "\n\n---\n\n" + task
     user_msg = f"Stanley 交俾你嘅任務：\n{task}\n\n請根據你嘅角色同專長，提供最完整、最具體、可直接使用嘅成品，唔好省略任何重要細節。"
     model = AGENT_MODELS.get(agent_name, MODEL_FAST)
     timeout = 300 if model == MODEL_HEAVY else 180
@@ -3457,6 +3536,104 @@ Leo 分析：
         await update.message.reply_text(report[i:i+4096])
 
 
+# ── 客戶智識庫指令 ────────────────────────────────────────────────────────────────
+
+async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /add [類別] [內容]
+    類別：quote / hook / objection / win / gap
+    或中文：客戶原話 / 開場白 / 反對意見 / 成功案例 / 空白位
+    """
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+    args = context.args or []
+    if len(args) < 2:
+        await update.message.reply_text(
+            "📚 *客戶智識庫* — 存入格式：\n\n"
+            "`/add quote 客戶話：腰痛咗三年，試過好多嘢都冇用`\n"
+            "`/add hook 你係咪瞓醒就腰痛？`\n"
+            "`/add objection 太貴 → 平均每次只係$X，少過一次按摩`\n"
+            "`/add win 陳先生：2次療程後腰痛減輕7成`\n"
+            "`/add gap 競品完全唔做「上班族久坐痛」角度`\n\n"
+            "存入後，Anna/Tony/Rex 做嘢時自動使用。",
+            parse_mode="Markdown"
+        )
+        return
+
+    raw_cat = args[0]
+    content = " ".join(args[1:]).strip()
+    category = _INTEL_CATEGORY_ALIASES.get(raw_cat)
+    if not category:
+        await update.message.reply_text(
+            f"❌ 唔識類別「{raw_cat}」\n\n"
+            "可用類別：quote / hook / objection / win / gap\n"
+            "中文：客戶原話 / 開場白 / 反對意見 / 成功案例 / 空白位"
+        )
+        return
+
+    brand_intel_db[category].append(content)
+    save_brand_intel(brand_intel_db)
+    label = _INTEL_CATEGORY_LABELS[category]
+    total = len(brand_intel_db[category])
+    await update.message.reply_text(
+        f"✅ 已存入 {label}\n\n"
+        f"「{content[:100]}{'...' if len(content) > 100 else ''}」\n\n"
+        f"該類別現有 {total} 條。Anna/Tony/Rex 下次做嘢時自動用到。"
+    )
+
+
+async def cmd_mydata(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/mydata — 睇智識庫所有儲存內容"""
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+    db = brand_intel_db
+    total = sum(len(v) for v in db.values())
+    if total == 0:
+        await update.message.reply_text(
+            "📚 智識庫係空嘅。\n\n"
+            "用 `/add quote 客戶原話` 開始存入資料。"
+        )
+        return
+
+    lines = [f"📚 *客戶智識庫* — 共 {total} 條\n"]
+    for cat, label in _INTEL_CATEGORY_LABELS.items():
+        items = db.get(cat, [])
+        if items:
+            lines.append(f"\n{label}（{len(items)} 條）")
+            for i, item in enumerate(items, 1):
+                preview = item[:80] + ("..." if len(item) > 80 else "")
+                lines.append(f"  {i}. {preview}")
+    lines.append("\n\n刪除某條：`/removedata [類別] [編號]`")
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+
+async def cmd_removedata(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/removedata [類別] [編號] — 刪除智識庫某條"""
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+    args = context.args or []
+    if len(args) < 2:
+        await update.message.reply_text("用法：`/removedata quote 2` （刪除 quote 第2條）", parse_mode="Markdown")
+        return
+    raw_cat = args[0]
+    category = _INTEL_CATEGORY_ALIASES.get(raw_cat)
+    if not category:
+        await update.message.reply_text(f"❌ 唔識類別「{raw_cat}」")
+        return
+    try:
+        idx = int(args[1]) - 1
+        items = brand_intel_db[category]
+        if idx < 0 or idx >= len(items):
+            await update.message.reply_text(f"❌ 編號超出範圍，該類別共 {len(items)} 條")
+            return
+        removed = items.pop(idx)
+        save_brand_intel(brand_intel_db)
+        label = _INTEL_CATEGORY_LABELS[category]
+        await update.message.reply_text(f"🗑 已刪除 {label} 第 {idx+1} 條：\n「{removed[:100]}」")
+    except ValueError:
+        await update.message.reply_text("❌ 編號要係數字，例如：`/removedata quote 2`", parse_mode="Markdown")
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 async def post_init(app):
@@ -3490,6 +3667,9 @@ def main():
     app.add_handler(CommandHandler("addcompetitor", cmd_addcompetitor))
     app.add_handler(CommandHandler("done", cmd_done))
     app.add_handler(CommandHandler("myreport", cmd_myreport))
+    app.add_handler(CommandHandler("add", cmd_add))
+    app.add_handler(CommandHandler("mydata", cmd_mydata))
+    app.add_handler(CommandHandler("removedata", cmd_removedata))
     app.add_handler(CallbackQueryHandler(handle_followup_callback, pattern="^followup:"))
     app.add_handler(CallbackQueryHandler(handle_report_action_callback, pattern="^report_action:"))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
