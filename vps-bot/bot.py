@@ -895,23 +895,28 @@ def rss_industry_news() -> str:
 def scrape_instagram(username: str, max_posts: int = 12) -> str:
     username = username.lstrip("@").strip()
 
-    # ── 主力：HikerAPI（專門 IG，sub-second，pay-per-request）──────────────
-    if HIKERAPI_AVAILABLE and HIKERAPI_TOKEN:
+    # ── 主力：HikerAPI REST（直接 HTTP，唔依賴 client 方法名）────────────
+    if HIKERAPI_TOKEN:
         try:
-            hk = HikerClient(token=HIKERAPI_TOKEN)
-            user = hk.user_by_username_v1(username)
+            # Step 1: user info
+            url1 = f"https://api.hikerapi.com/v1/user/by/username?username={urllib.parse.quote(username)}"
+            req1 = urllib.request.Request(url1, headers={"x-access-key": HIKERAPI_TOKEN, "accept": "application/json"})
+            with urllib.request.urlopen(req1, timeout=15) as r:
+                user = json.loads(r.read().decode())
             user_id = user.get("pk") or user.get("id")
             followers = user.get("follower_count") or "?"
-            full_name = user.get("full_name") or username
-            medias = hk.user_medias_v1(user_id, amount=max_posts)
-            if not isinstance(medias, list):
-                medias = medias.get("items", []) if isinstance(medias, dict) else []
+            # Step 2: posts
+            url2 = f"https://api.hikerapi.com/v1/user/medias/chunk?user_id={user_id}&amount={max_posts}"
+            req2 = urllib.request.Request(url2, headers={"x-access-key": HIKERAPI_TOKEN, "accept": "application/json"})
+            with urllib.request.urlopen(req2, timeout=15) as r:
+                raw = json.loads(r.read().decode())
+            medias = raw if isinstance(raw, list) else raw.get("response", raw.get("items", []))
             output = f"📊 @{username}（{followers} followers）最新 {len(medias)} 帖：\n來源：HikerAPI\n\n"
             for i, item in enumerate(medias[:max_posts], 1):
                 likes = item.get("like_count") or 0
                 comments = item.get("comment_count") or 0
-                caption_obj = item.get("caption") or {}
-                caption = (caption_obj.get("text") if isinstance(caption_obj, dict) else str(caption_obj) or "（無文字）")[:200]
+                cap = item.get("caption") or {}
+                caption = (cap.get("text") if isinstance(cap, dict) else str(cap or "（無文字）"))[:200]
                 ts = str(item.get("taken_at") or "")[:10]
                 output += f"{i}. [{ts}] 👍{likes} 💬{comments}\n{caption}\n\n"
             return output.strip()
