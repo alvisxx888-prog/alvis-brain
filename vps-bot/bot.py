@@ -3028,6 +3028,46 @@ async def handle_report_action_callback(update: Update, context: ContextTypes.DE
             await query.edit_message_text("冇內容可以加入，請先完成一個任務。")
         return
 
+    if query.data.startswith("report_save:"):
+        import datetime
+        agent_name = query.data.split(":", 1)[1]
+        outputs = agent_outputs.get(ALLOWED_USER_ID, {})
+        content = outputs.get(agent_name, "")
+        if content:
+            entry = {
+                "agent": agent_name,
+                "question": f"{agent_name} 任務成果",
+                "answer": content[:3000],
+                "ts": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            }
+            key = str(ALLOWED_USER_ID)
+            report_buffer.setdefault(key, []).append(entry)
+            save_report_buffer(report_buffer)
+            await query.answer(f"✅ {agent_name} 成果已加入 Report")
+            # 更新按鈕顯示已儲存
+            new_buttons = [[b for b in row if agent_name not in b.callback_data or "followup" in b.callback_data]
+                           for row in query.message.reply_markup.inline_keyboard]
+            new_buttons = [row for row in new_buttons if row]
+            try:
+                await query.edit_message_reply_markup(InlineKeyboardMarkup(new_buttons))
+            except Exception:
+                pass
+        else:
+            await query.answer(f"揾唔到 {agent_name} 嘅成果")
+        return
+
+    if query.data.startswith("report_skip:"):
+        agent_name = query.data.split(":", 1)[1]
+        await query.answer(f"❌ {agent_name} 略過")
+        # 移除該行按鈕
+        new_buttons = [row for row in query.message.reply_markup.inline_keyboard
+                       if not any(agent_name in b.callback_data for b in row if "followup" not in b.callback_data)]
+        try:
+            await query.edit_message_reply_markup(InlineKeyboardMarkup(new_buttons) if new_buttons else None)
+        except Exception:
+            pass
+        return
+
     entry = pending_report_entry.pop(ALLOWED_USER_ID, None)
     if action == "add" and entry:
         import datetime
@@ -3445,11 +3485,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Phase 3（Anna）係後面 file_dispatches 處理，唔係喺呢度
 
-    # 追問按鈕（所有 Phase 1 + 2 嘅員工）+ 加入 Report
+    # 每個員工獨立一行：追問 / ✅ 加入 Report / ❌ 唔要
     if all_agents_ran:
-        buttons = [[InlineKeyboardButton(f"🔍 追問 {n}", callback_data=f"followup:{n}")] for n in all_agents_ran]
-        buttons.append([InlineKeyboardButton("📋 加入成果入 Report", callback_data="report_action:add_summary")])
-        await update.message.reply_text("💬 想追問任何員工？", reply_markup=InlineKeyboardMarkup(buttons))
+        buttons = [
+            [
+                InlineKeyboardButton(f"🔍 追問 {n}", callback_data=f"followup:{n}"),
+                InlineKeyboardButton("✅ 加入", callback_data=f"report_save:{n}"),
+                InlineKeyboardButton("❌ 唔要", callback_data=f"report_skip:{n}"),
+            ]
+            for n in all_agents_ran
+        ]
+        await update.message.reply_text("💬 每個員工嘅成果，加唔加入 Report？", reply_markup=InlineKeyboardMarkup(buttons))
 
     # 整合所有成果 → Phase 3 Anna 用
     combined_context = ""
