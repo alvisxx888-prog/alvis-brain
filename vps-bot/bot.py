@@ -3009,6 +3009,25 @@ async def handle_report_action_callback(update: Update, context: ContextTypes.DE
     if query.from_user.id != ALLOWED_USER_ID:
         return
     action = query.data.split(":", 1)[1]
+
+    if action == "add_summary":
+        import datetime
+        content = last_content.get(ALLOWED_USER_ID, "")
+        if content:
+            entry = {
+                "agent": "任務成果",
+                "question": "任務完整成果",
+                "answer": content[:3000],
+                "ts": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            }
+            key = str(ALLOWED_USER_ID)
+            report_buffer.setdefault(key, []).append(entry)
+            save_report_buffer(report_buffer)
+            await query.edit_message_text("📋 成果已加入 Report！用 /myreport 睇，/reportpdf 出 PDF。")
+        else:
+            await query.edit_message_text("冇內容可以加入，請先完成一個任務。")
+        return
+
     entry = pending_report_entry.pop(ALLOWED_USER_ID, None)
     if action == "add" and entry:
         import datetime
@@ -3426,9 +3445,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Phase 3（Anna）係後面 file_dispatches 處理，唔係喺呢度
 
-    # 追問按鈕（所有 Phase 1 + 2 嘅員工）
+    # 追問按鈕（所有 Phase 1 + 2 嘅員工）+ 加入 Report
     if all_agents_ran:
         buttons = [[InlineKeyboardButton(f"🔍 追問 {n}", callback_data=f"followup:{n}")] for n in all_agents_ran]
+        buttons.append([InlineKeyboardButton("📋 加入成果入 Report", callback_data="report_action:add_summary")])
         await update.message.reply_text("💬 想追問任何員工？", reply_markup=InlineKeyboardMarkup(buttons))
 
     # 整合所有成果 → Phase 3 Anna 用
