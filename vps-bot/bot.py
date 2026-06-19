@@ -29,6 +29,12 @@ except ImportError:
     APIFY_AVAILABLE = False
 
 try:
+    from hikerapi import Client as HikerClient
+    HIKERAPI_AVAILABLE = True
+except ImportError:
+    HIKERAPI_AVAILABLE = False
+
+try:
     import instaloader
     INSTALOADER_AVAILABLE = True
 except ImportError:
@@ -94,6 +100,7 @@ USAGE_FILE = "/root/claude-bot/usage.json"
 AGENT_OUTPUTS_FILE = "/root/claude-bot/agent_outputs.json"
 TASK_LOG_FILE = "/root/claude-bot/task_log.md"
 APIFY_TOKEN = os.environ.get("APIFY_API_TOKEN", "")
+HIKERAPI_TOKEN = os.environ.get("HIKERAPI_TOKEN", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GAMMA_API_KEY = os.environ.get("GAMMA_API_KEY", "")
 
@@ -888,36 +895,30 @@ def rss_industry_news() -> str:
 def scrape_instagram(username: str, max_posts: int = 12) -> str:
     username = username.lstrip("@").strip()
 
-    # ── 主力：Apify Instagram Scraper（最可靠）──────────────────────────────
-    if APIFY_AVAILABLE and APIFY_TOKEN:
+    # ── 主力：HikerAPI（專門 IG，sub-second，pay-per-request）──────────────
+    if HIKERAPI_AVAILABLE and HIKERAPI_TOKEN:
         try:
-            client = ApifyClient(APIFY_TOKEN)
-            run_input = {
-                "directUrls": [f"https://www.instagram.com/{username}/"],
-                "resultsType": "posts",
-                "resultsLimit": max_posts,
-                "addParentData": False,
-            }
-            run = client.actor("apify/instagram-scraper").call(run_input=run_input, timeout_secs=120)
-            dataset_id = getattr(run, "default_dataset_id", None) or run.get("defaultDatasetId")
-            items = list(client.dataset(dataset_id).iterate_items()) if dataset_id else []
-            if items:
-                # Try to get profile info from first item
-                first = items[0]
-                owner = first.get("ownerUsername") or username
-                followers = first.get("followersCount") or "?"
-                output = f"📊 @{owner}（{followers} followers）最新 {len(items)} 帖：\n來源：Apify IG Scraper\n\n"
-                for i, item in enumerate(items[:max_posts], 1):
-                    likes = item.get("likesCount") or 0
-                    comments = item.get("commentsCount") or 0
-                    caption = (item.get("caption") or "（無文字）")[:200]
-                    ts = (item.get("timestamp") or "")[:10]
-                    output += f"{i}. [{ts}] 👍{likes} 💬{comments}\n{caption}\n\n"
-                return output.strip()
+            hk = HikerClient(token=HIKERAPI_TOKEN)
+            user = hk.user_by_username_v1(username)
+            user_id = user.get("pk") or user.get("id")
+            followers = user.get("follower_count") or "?"
+            full_name = user.get("full_name") or username
+            medias = hk.user_medias_v1(user_id, amount=max_posts)
+            if not isinstance(medias, list):
+                medias = medias.get("items", []) if isinstance(medias, dict) else []
+            output = f"📊 @{username}（{followers} followers）最新 {len(medias)} 帖：\n來源：HikerAPI\n\n"
+            for i, item in enumerate(medias[:max_posts], 1):
+                likes = item.get("like_count") or 0
+                comments = item.get("comment_count") or 0
+                caption_obj = item.get("caption") or {}
+                caption = (caption_obj.get("text") if isinstance(caption_obj, dict) else str(caption_obj) or "（無文字）")[:200]
+                ts = str(item.get("taken_at") or "")[:10]
+                output += f"{i}. [{ts}] 👍{likes} 💬{comments}\n{caption}\n\n"
+            return output.strip()
         except Exception as e:
-            logger.warning(f"Apify IG scrape error: {e}; trying Instaloader")
+            logger.warning(f"HikerAPI IG scrape error: {e}; trying Instaloader")
 
-    # ── Fallback 1：Instaloader ─────────────────────────────────────────────
+    # ── Fallback：Instaloader ───────────────────────────────────────────────
     if INSTALOADER_AVAILABLE:
         try:
             L = instaloader.Instaloader(
@@ -935,13 +936,13 @@ def scrape_instagram(username: str, max_posts: int = 12) -> str:
                 output += f"{i+1}. [{ts}] 👍{post.likes} 💬{post.comments}\n{caption}\n\n"
             return output.strip()
         except Exception as e:
-            logger.warning(f"Instaloader error: {e}; using web search fallback")
+            logger.warning(f"Instaloader error: {e}")
 
     return (
         f"⚠️IG_FETCH_FAILED：無法直接抓取 @{username} IG。\n"
-        f"Apify 及 Instaloader 均失敗。\n"
-        f"可能原因：Apify credits 不足 / IG 封鎖。\n"
-        f"請去 apify.com → Billing 確認 credits，或稍後再試。"
+        f"HikerAPI 及 Instaloader 均失敗。\n"
+        f"可能原因：HIKERAPI_TOKEN 未設定 / IG 封鎖。\n"
+        f"請去 hikerapi.com → Dashboard 確認 token 同 credits。"
     )
 
 def scrape_facebook(page_name: str, max_posts: int = 10) -> str:

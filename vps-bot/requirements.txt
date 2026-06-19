@@ -3,6 +3,7 @@ python-telegram-bot
 apscheduler
 duckduckgo-search
 apify-client
+hikerapi
 openai
 python-pptx
 reportlab
