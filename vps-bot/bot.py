@@ -598,22 +598,25 @@ def append_task_log(instruction: str, agents: list, output_summary: str) -> None
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     agents_str = "、".join(agents) if agents else "Amy 直接回覆"
     entry = (
-        f"\n## [{timestamp}] {instruction[:80]}\n"
+        f"\n<<<TASK_ENTRY>>>\n"
+        f"## [{timestamp}] {instruction[:80]}\n"
         f"- 員工：{agents_str}\n"
         f"- 成果：{output_summary[:500]}\n"
-        f"---\n"
     )
     try:
         with open(TASK_LOG_FILE, "a", encoding="utf-8") as f:
             f.write(entry)
-        # 只保留最近 20 個任務
+        # 只保留最近 20 個任務（用唯一 separator 切割，唔怕內容有 ## [）
+        _SEP = "\n<<<TASK_ENTRY>>>\n"
         with open(TASK_LOG_FILE, "r", encoding="utf-8") as f:
             content = f.read()
-        parts = content.split("\n## [")
-        if len(parts) > 21:
-            trimmed = parts[0] + "\n## [" + "\n## [".join(parts[-20:])
-            with open(TASK_LOG_FILE, "w", encoding="utf-8") as f:
-                f.write(trimmed)
+        # 舊格式（冇 separator）直接保留；新格式用 separator
+        if _SEP in content:
+            parts = content.split(_SEP)
+            if len(parts) > 20:
+                trimmed = _SEP.join(parts[-20:])
+                with open(TASK_LOG_FILE, "w", encoding="utf-8") as f:
+                    f.write(trimmed)
     except Exception as e:
         logger.warning(f"Task log write error: {e}")
 
@@ -1554,9 +1557,13 @@ async def send_with_avatar(update: Update, agent_name: str, text: str):
     loop = asyncio.get_event_loop()
 
     if not os.path.exists(avatar_path):
-        img_bytes = await loop.run_in_executor(executor, _make_agent_avatar, agent_name)
-        with open(avatar_path, "wb") as f:
-            f.write(img_bytes)
+        try:
+            img_bytes = await loop.run_in_executor(executor, _make_agent_avatar, agent_name)
+            with open(avatar_path, "wb") as f:
+                f.write(img_bytes)
+        except Exception as e:
+            logger.warning(f"Avatar generation failed ({agent_name}): {e}")
+            avatar_path = None
 
     emoji = AGENT_EMOJI_LABEL.get(agent_name, "")
     role  = AGENT_AVATAR_DATA.get(agent_name, {}).get("role", "")
@@ -3044,9 +3051,14 @@ async def handle_report_action_callback(update: Update, context: ContextTypes.DE
             report_buffer.setdefault(key, []).append(entry)
             save_report_buffer(report_buffer)
             await query.answer(f"✅ {agent_name} 成果已加入 Report")
-            # 更新按鈕顯示已儲存
-            new_buttons = [[b for b in row if agent_name not in b.callback_data or "followup" in b.callback_data]
-                           for row in query.message.reply_markup.inline_keyboard]
+            # 移除該員工嘅 ✅/❌ 按鈕，保留追問按鈕
+            new_buttons = [
+                [b for b in row if not (
+                    b.callback_data == f"report_save:{agent_name}" or
+                    b.callback_data == f"report_skip:{agent_name}"
+                )]
+                for row in query.message.reply_markup.inline_keyboard
+            ]
             new_buttons = [row for row in new_buttons if row]
             try:
                 await query.edit_message_reply_markup(InlineKeyboardMarkup(new_buttons))
@@ -3059,9 +3071,14 @@ async def handle_report_action_callback(update: Update, context: ContextTypes.DE
     if query.data.startswith("report_skip:"):
         agent_name = query.data.split(":", 1)[1]
         await query.answer(f"❌ {agent_name} 略過")
-        # 移除該行按鈕
-        new_buttons = [row for row in query.message.reply_markup.inline_keyboard
-                       if not any(agent_name in b.callback_data for b in row if "followup" not in b.callback_data)]
+        # 移除整行（追問 + ✅ + ❌ 一齊走）
+        new_buttons = [
+            row for row in query.message.reply_markup.inline_keyboard
+            if not any(
+                b.callback_data in (f"report_save:{agent_name}", f"report_skip:{agent_name}", f"followup:{agent_name}")
+                for b in row
+            )
+        ]
         try:
             await query.edit_message_reply_markup(InlineKeyboardMarkup(new_buttons) if new_buttons else None)
         except Exception:
@@ -3238,9 +3255,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     is_new_task = data.get("new_task", True)  # 預設視為新任務（保守）
+    _is_clarify_or_reject = bool(data.get("clarify") or data.get("reject"))
 
-    # 新任務：清除上一個任務嘅殘留數據，避免撈埋一齊
-    if is_new_task:
+    # 新任務：清除殘留數據——但 clarify/reject 唔清，保留上次成果供對話繼續
+    if is_new_task and not _is_clarify_or_reject:
         last_content[ALLOWED_USER_ID] = ""
         save_last_content_to_disk(last_content)
         agent_outputs[ALLOWED_USER_ID] = {}
