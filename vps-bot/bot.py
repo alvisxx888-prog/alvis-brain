@@ -4111,7 +4111,7 @@ async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def post_init(app):
     scheduler = AsyncIOScheduler(timezone="Asia/Hong_Kong")
-    scheduler.add_job(send_daily_report, CronTrigger(hour=8, minute=45), args=[app])
+    scheduler.add_job(send_daily_report, CronTrigger(hour=8, minute=45, timezone="Asia/Hong_Kong"), args=[app])
     scheduler.start()
 
 
