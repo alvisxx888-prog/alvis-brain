@@ -882,6 +882,17 @@ def rss_ai_news() -> str:
     return "\n\n".join(parts)
 
 
+def rss_ai_spotlight_news() -> str:
+    """專門追蹤 Hermes Agent、OpenAI Codex、Claude 三大 AI 動態"""
+    feeds = [
+        "https://news.google.com/rss/search?q=Hermes+Agent+NousResearch+AI&hl=en-US&gl=US&ceid=US:en",
+        "https://news.google.com/rss/search?q=OpenAI+Codex+agent+update&hl=en-US&gl=US&ceid=US:en",
+        "https://news.google.com/rss/search?q=Anthropic+Claude+update+new+feature&hl=en-US&gl=US&ceid=US:en",
+    ]
+    parts = [r for f in feeds if (r := fetch_rss_news(f, 3))]
+    return "\n\n".join(parts)
+
+
 def rss_industry_news() -> str:
     feeds = [
         "https://news.google.com/rss/search?q=%E9%A6%99%E6%B8%AF+%E7%BE%8E%E5%AE%B9+%E7%97%9B%E7%97%87&hl=zh-HK&gl=HK&ceid=HK:zh-Hant",
@@ -1654,7 +1665,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/reportpdf → Report Q&A 生成 PDF\n\n"
         f"🔍 網絡搜尋：{search_st}  📡 Apify：{apify_st}\n"
         f"🎙️ 語音轉錄：{voice_st}  📄 PDF：{pdf_st}\n"
-        "每日 8:45 自動發送情報簡報（頭條新聞 + 行業要聞 + AI 資訊）。\n\n"
+        "每日 8:15 自動發送情報簡報（頭條新聞 + 行業要聞 + AI 資訊 + AI 追蹤）。\n\n"
         "有咩吩咐？"
     )
 
@@ -3630,14 +3641,16 @@ async def send_daily_report(app):
 
         import asyncio as _aio
         # RSS 係免費實時主力；DuckDuckGo 做 backup
-        hk_news_rss, ai_raw_rss, industry_rss = await asyncio.gather(
+        hk_news_rss, ai_raw_rss, industry_rss, ai_spotlight_rss = await asyncio.gather(
             loop.run_in_executor(executor, rss_hk_news),
             loop.run_in_executor(executor, rss_ai_news),
             loop.run_in_executor(executor, rss_industry_news),
+            loop.run_in_executor(executor, rss_ai_spotlight_news),
         )
         hk_news = hk_news_rss or ""
         ai_raw = ai_raw_rss or ""
         industry_raw = industry_rss or ""
+        ai_spotlight_raw = ai_spotlight_rss or ""
         search_ok = WEB_SEARCH_AVAILABLE or (APIFY_AVAILABLE and APIFY_TOKEN)
         biz_news = ""
         if search_ok:
@@ -3671,6 +3684,15 @@ async def send_daily_report(app):
                 f"② 對 Stanley 美容/痛症業務嘅直接影響 "
                 f"③ 如有免費可用工具：「工具名 — 免費 — 可用於XX」；付費工具略過唔提"
             )
+            kai_spotlight_task = (
+                f"根據以下今日真實資訊，為以下三大 AI 各出一條最重要更新（每條 1-2 句）：\n\n"
+                f"{ai_spotlight_raw[:2500]}\n\n"
+                f"格式：\n"
+                f"🟣 Hermes Agent：[最新動態，冇就寫「暫無新資訊」]\n"
+                f"🟢 OpenAI Codex：[最新動態，冇就寫「暫無新資訊」]\n"
+                f"🔵 Claude（Anthropic）：[最新動態，冇就寫「暫無新資訊」]\n"
+                f"最後一行：💡 對你生意最有用嘅一個 takeaway（一句）"
+            )
             search_tag = "📡 RSS + 🔍 實時搜尋"
         else:
             news_task = (
@@ -3687,14 +3709,23 @@ async def send_daily_report(app):
                 "② AI 用於美容/健康/銷售嘅直接影響\n"
                 "③ 如有免費工具：「工具名 — 免費 — 可用於XX」；付費工具略過唔提"
             )
+            kai_spotlight_task = (
+                "為以下三大 AI 各出一條最重要近況（每條 1-2 句，如冇數據就寫「暫無新資訊」）：\n"
+                "格式：\n"
+                "🟣 Hermes Agent：[近況]\n"
+                "🟢 OpenAI Codex：[近況]\n"
+                "🔵 Claude（Anthropic）：[近況]\n"
+                "💡 對你生意最有用嘅一個 takeaway（一句）"
+            )
             search_tag = "📚 知識庫"
 
         agent_tasks = [
             loop.run_in_executor(executor, agent_call, "Leo", news_task),
             loop.run_in_executor(executor, agent_call, "Leo", leo_task),
             loop.run_in_executor(executor, agent_call, "Kai", kai_task),
+            loop.run_in_executor(executor, agent_call, "Kai", kai_spotlight_task),
         ]
-        (_, headlines), (_, market), (_, ai_report) = await asyncio.gather(*agent_tasks)
+        (_, headlines), (_, market), (_, ai_report), (_, ai_spotlight) = await asyncio.gather(*agent_tasks)
 
         msg = (
             f"🌅 Stanley，早晨！{date_str} 情報簡報（{search_tag}）\n"
@@ -3702,6 +3733,8 @@ async def send_daily_report(app):
             f"📰 今日頭條新聞：\n{headlines}\n\n"
             f"📊 Leo — 行業要聞：\n{market}\n\n"
             f"🤖 Kai — AI 資訊：\n{ai_report}\n\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"🔦 Kai — AI 追蹤（Hermes / Codex / Claude）：\n{ai_spotlight}\n\n"
             f"━━━━━━━━━━━━━━\n有咩問題隨時問我！"
         )
 
@@ -4135,7 +4168,7 @@ async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def post_init(app):
     scheduler = AsyncIOScheduler(timezone="Asia/Hong_Kong")
-    scheduler.add_job(send_daily_report, CronTrigger(hour=8, minute=45, timezone="Asia/Hong_Kong"), args=[app])
+    scheduler.add_job(send_daily_report, CronTrigger(hour=8, minute=15, timezone="Asia/Hong_Kong"), args=[app])
     scheduler.start()
 
 
