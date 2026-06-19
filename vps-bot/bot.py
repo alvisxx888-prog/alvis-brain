@@ -1675,7 +1675,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/reportpdf → Report Q&A 生成 PDF\n\n"
         f"🔍 網絡搜尋：{search_st}  📡 Apify：{apify_st}\n"
         f"🎙️ 語音轉錄：{voice_st}  📄 PDF：{pdf_st}\n"
-        "每日 8:15 自動發送情報簡報（頭條新聞 + 行業要聞 + AI 資訊 + AI 追蹤）。\n\n"
+        "每日 8:45 自動發送情報簡報（頭條新聞 + 行業要聞 + AI 資訊 + AI 追蹤）。\n\n"
         "有咩吩咐？"
     )
 
@@ -4193,7 +4193,7 @@ async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def post_init(app):
     scheduler = AsyncIOScheduler(timezone="Asia/Hong_Kong")
-    scheduler.add_job(send_daily_report, CronTrigger(hour=8, minute=15, timezone="Asia/Hong_Kong"), args=[app])
+    scheduler.add_job(send_daily_report, CronTrigger(hour=8, minute=45, timezone="Asia/Hong_Kong"), args=[app])
     scheduler.start()
 
 
