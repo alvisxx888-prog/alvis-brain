@@ -893,6 +893,16 @@ def rss_ai_spotlight_news() -> str:
     return "\n\n".join(parts)
 
 
+def rss_world_news() -> str:
+    """世界各地重要新聞（政治、經濟、科技）"""
+    feeds = [
+        "https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en",
+        "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en",
+    ]
+    parts = [r for f in feeds if (r := fetch_rss_news(f, 4))]
+    return "\n\n".join(parts)
+
+
 def rss_industry_news() -> str:
     feeds = [
         "https://news.google.com/rss/search?q=%E9%A6%99%E6%B8%AF+%E7%BE%8E%E5%AE%B9+%E7%97%9B%E7%97%87&hl=zh-HK&gl=HK&ceid=HK:zh-Hant",
@@ -3641,16 +3651,18 @@ async def send_daily_report(app):
 
         import asyncio as _aio
         # RSS 係免費實時主力；DuckDuckGo 做 backup
-        hk_news_rss, ai_raw_rss, industry_rss, ai_spotlight_rss = await asyncio.gather(
+        hk_news_rss, ai_raw_rss, industry_rss, ai_spotlight_rss, world_rss = await asyncio.gather(
             loop.run_in_executor(executor, rss_hk_news),
             loop.run_in_executor(executor, rss_ai_news),
             loop.run_in_executor(executor, rss_industry_news),
             loop.run_in_executor(executor, rss_ai_spotlight_news),
+            loop.run_in_executor(executor, rss_world_news),
         )
         hk_news = hk_news_rss or ""
         ai_raw = ai_raw_rss or ""
         industry_raw = industry_rss or ""
         ai_spotlight_raw = ai_spotlight_rss or ""
+        world_raw = world_rss or ""
         search_ok = WEB_SEARCH_AVAILABLE or (APIFY_AVAILABLE and APIFY_TOKEN)
         biz_news = ""
         if search_ok:
@@ -3676,6 +3688,12 @@ async def send_daily_report(app):
                 f"根據以下搜尋結果，生成香港美容同痛症業務情報（150字內）：\n\n"
                 f"{industry_raw[:2000]}\n\n"
                 f"輸出：① 今日最重要行業動態 ② 機會或風險 ③ Stanley 今日最應行動嘅一件事"
+            )
+            world_task = (
+                f"根據以下今日世界新聞，列出5條最重要國際要聞，每條一句摘要（中文輸出）：\n\n"
+                f"{world_raw[:2500]}\n\n"
+                f"格式（每條一行）：🌍 [標題]：[一句摘要]\n"
+                f"最後補一行：💼 其中哪條新聞對香港中小生意有影響？一句說明。"
             )
             kai_task = (
                 f"根據以下今日真實 AI 資訊，生成 AI 簡報（150字內）：\n\n"
@@ -3703,6 +3721,11 @@ async def send_daily_report(app):
                 "今日香港美容同痛症業務情報（150字內）：\n"
                 "① 最新行業趨勢或熱話 ② 競品動態 ③ Stanley 今日最應行動嘅一件事"
             )
+            world_task = (
+                "今日5條最重要世界要聞（中文輸出）：\n"
+                "格式（每條一行）：🌍 [標題]：[一句摘要]\n"
+                "最後補一行：💼 其中哪條新聞對香港中小生意有影響？一句說明。"
+            )
             kai_task = (
                 "今日全球 AI 市場簡報（150字內）：\n"
                 "① 最新 AI 工具或功能更新（只講事實）\n"
@@ -3722,15 +3745,17 @@ async def send_daily_report(app):
         agent_tasks = [
             loop.run_in_executor(executor, agent_call, "Leo", news_task),
             loop.run_in_executor(executor, agent_call, "Leo", leo_task),
+            loop.run_in_executor(executor, agent_call, "Leo", world_task),
             loop.run_in_executor(executor, agent_call, "Kai", kai_task),
             loop.run_in_executor(executor, agent_call, "Kai", kai_spotlight_task),
         ]
-        (_, headlines), (_, market), (_, ai_report), (_, ai_spotlight) = await asyncio.gather(*agent_tasks)
+        (_, headlines), (_, market), (_, world_news), (_, ai_report), (_, ai_spotlight) = await asyncio.gather(*agent_tasks)
 
         msg = (
             f"🌅 Stanley，早晨！{date_str} 情報簡報（{search_tag}）\n"
             f"━━━━━━━━━━━━━━\n\n"
-            f"📰 今日頭條新聞：\n{headlines}\n\n"
+            f"📰 香港頭條：\n{headlines}\n\n"
+            f"🌍 世界要聞：\n{world_news}\n\n"
             f"📊 Leo — 行業要聞：\n{market}\n\n"
             f"🤖 Kai — AI 資訊：\n{ai_report}\n\n"
             f"━━━━━━━━━━━━━━\n"
