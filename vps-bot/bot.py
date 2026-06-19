@@ -420,19 +420,26 @@ AMY_DISPATCH_SYSTEM = """你係 Amy，Stanley（Alvis）團隊嘅首席秘書同
 必須輸出純 JSON，唔可以有任何其他文字：
 
 需要問清楚（指令模糊）：
-{"clarify": "你係想要：\nA) [具體選項A]\nB) [具體選項B]\n係邊個？", "reject": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": null}
+{"new_task": true, "clarify": "你係想要：\nA) [具體選項A]\nB) [具體選項B]\n係邊個？", "reject": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": null}
 
 直接否決（做唔到 / 冇資料）：
-{"clarify": null, "reject": "❌ [做唔到原因一句]\n\n💡 建議改為：[具體可行做法]\n例如咁講：[正確指令例子]", "amy_message": null, "actions": [], "dispatch": [], "direct_reply": null}
+{"new_task": true, "clarify": null, "reject": "❌ [做唔到原因一句]\n\n💡 建議改為：[具體可行做法]\n例如咁講：[正確指令例子]", "amy_message": null, "actions": [], "dispatch": [], "direct_reply": null}
 
-有 action：
-{"clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [{"type": "scrape_ig", "param": "帳號名"}], "dispatch": [], "direct_reply": null}
+有 action（全新任務）：
+{"new_task": true, "clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [{"type": "scrape_ig", "param": "帳號名"}], "dispatch": [], "direct_reply": null}
 
-有員工分派：
-{"clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [], "dispatch": [{"agent": "AgentName", "task": "具體任務描述，包含足夠上下文"}], "direct_reply": null}
+有員工分派（全新任務）：
+{"new_task": true, "clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [], "dispatch": [{"agent": "AgentName", "task": "具體任務描述，包含足夠上下文"}], "direct_reply": null}
+
+有員工分派（跟進 / 優化 / 修改上一個任務）：
+{"new_task": false, "clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [], "dispatch": [{"agent": "AgentName", "task": "具體任務描述"}], "direct_reply": null}
 
 Amy直接回答：
-{"clarify": null, "reject": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": "Amy直接回覆"}
+{"new_task": false, "clarify": null, "reject": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": "Amy直接回覆"}
+
+【new_task 判斷規則】
+new_task: true = 全新獨立任務（幫我整X、分析Y、寫Z — 第一次提到某個成品或主題）
+new_task: false = 跟進上一個任務（優化、修改、再整過、加多啲、縮短、翻譯上一份）
 
 action types: scrape_ig / scrape_threads / scrape_fb / scrape_xhs / scrape_web / scrape_news / product_research"""
 
@@ -3087,16 +3094,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         role = "Stanley" if msg["role"] == "user" else "Amy"
         history_text += f"{role}: {msg['content']}\n\n"
 
-    # 短跟進指令自動附上上次內容，解決 Amy「唔記得」問題
-    cached = last_content.get(ALLOWED_USER_ID, "")
-    content_hint = (
-        f"\n\n[Stanley 上次分享嘅內容（可直接使用）：\n{cached[:3000]}]\n"
-        if cached and len(user_message) < 200 else ""
-    )
-
+    # 先讓 Amy 判斷係新任務定跟進，唔預先注入舊內容
     dispatch_user = (
         f"{'對話歷史：' + chr(10) + history_text if history_text else ''}"
-        f"{content_hint}"
         f"Stanley 最新指令：{user_message}"
     )
     raw = await loop.run_in_executor(executor, run_with_system, AMY_DISPATCH_SYSTEM, dispatch_user, MODEL_FAST)
@@ -3114,6 +3114,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_history(conversation_history)
         await send_long(update, f"{AGENT_EMOJI['Amy']} Amy：{raw}")
         return
+
+    is_new_task = data.get("new_task", True)  # 預設視為新任務（保守）
+
+    # 新任務：清除上一個任務嘅殘留數據，避免撈埋一齊
+    if is_new_task:
+        last_content[ALLOWED_USER_ID] = ""
+        save_last_content_to_disk(last_content)
+        agent_outputs[ALLOWED_USER_ID] = {}
+        save_agent_outputs_to_disk(agent_outputs)
 
     if data.get("clarify"):
         clarify_msg = f"{AGENT_EMOJI['Amy']} Amy：{data['clarify']}"
@@ -3142,6 +3151,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     dispatches = [d for d in data.get("dispatch", []) if d.get("agent") in AGENT_PROMPTS]
     actions = [a for a in data.get("actions", []) if a.get("type") and a.get("param")]
     amy_msg = data.get("amy_message", "")
+
+    # 跟進任務：將上一次成果注入員工 task context
+    if not is_new_task:
+        cached = last_content.get(ALLOWED_USER_ID, "")
+        if cached:
+            dispatches = [
+                {**d, "task": f"【上一個任務嘅成果（按此優化/修改）】\n{cached[:2000]}\n\n{'='*30}\n\n你嘅任務：\n{d['task']}"}
+                for d in dispatches
+            ]
 
     if not dispatches and not actions:
         reply = f"{AGENT_EMOJI['Amy']} Amy：{amy_msg or raw}"
@@ -3415,10 +3433,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         summary_msg = f"{AGENT_EMOJI['Amy']} Amy 最終報告：\n\n{summary}"
         await send_long(update, summary_msg)
+
+        # 任務完成標記
+        agents_done = "、".join(all_agents_ran) if all_agents_ran else "員工"
+        await update.message.reply_text(
+            f"✅ 任務完成\n"
+            f"指令：{user_message[:60]}{'...' if len(user_message) > 60 else ''}\n"
+            f"完成員工：{agents_done}\n\n"
+            f"如需跟進優化，直接講「修改」或「優化」即可。\n"
+            f"如係全新任務，直接講新指令，唔會撈埋上一個。"
+        )
     else:
         summary_msg = ""
 
-    # Save all agent outputs to last_content so follow-up "optimize/redo" commands have full context
+    # 儲存呢個任務嘅成果，供下一個「跟進」指令使用（new_task: false 先會讀取）
     if all_results:
         last_content[ALLOWED_USER_ID] = all_results[:8000]
         save_last_content_to_disk(last_content)
