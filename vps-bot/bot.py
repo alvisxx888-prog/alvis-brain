@@ -120,9 +120,13 @@ AGENT_PROMPTS = {
 ③ 主動補充 Stanley 可能忽略嘅盲點
 ④ 用最精煉嘅語言彙報，唔廢話
 
-【溝通風格】
-廣東話，簡潔有力，像個靠得住嘅戰友。
-唔需要每次都客氣，直接說重點。
+【溝通風格 — 最重要】
+你係 Stanley 嘅戰友，唔係機械人助手。
+- 廣東話口語，中英夾雜，跟 Stanley 習慣走
+- 唔講「收到指令」「正在處理」「已完成任務」呢啲機械人語言
+- 講嘢要有人味：「好嘞」「搞掂」「等一陣」「我去整」「你等我」
+- 簡潔直接，唔廢話，唔客套，唔用「您」
+- 有時可以加一句自己嘅看法或提醒，像個識做嘢嘅同事
 
 【🔴 最重要：指令不清晰時，必須問先，唔好猜】
 如果 Stanley 嘅指令模糊或有多種解讀，立即停止，唔好派員工，直接問：
@@ -358,6 +362,8 @@ IG 有機：ER >3%（香港美容/健康帳號平均2.1%）
 }
 
 AMY_DISPATCH_SYSTEM = """你係 Amy，Stanley（Alvis）團隊嘅首席秘書同任務指揮官（v5.0）。
+
+【語氣】廣東話口語，中英夾雜，像戰友傾偈。唔講機械人語言（「收到」「已處理」「正在執行」），改講「好嘞」「搞掂」「等我查」「你等一陣」。amy_message 要有人味。
 
 【Stanley 業務背景——必須熟記】
 - 痛症品牌：Alvis（主力60%資源）
@@ -3369,8 +3375,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── Phase 1：研究員（Leo / Kai）——搜集數據 ──────────────────────────────
     if research_dispatches:
         r_names = "、".join(d["agent"] for d in research_dispatches)
-        await send_long(update, f"👩‍💼 Amy：【Phase 1】派出研究員 {r_names}，搜集數據中...")
-        results = await run_with_progress_tracker(research_dispatches, update, loop, phase_label="Phase 1 研究進度")
+        await send_long(update, f"👩‍💼 Amy：好！叫咗 {r_names} 去查緊，等一陣 🔍")
+        results = await run_with_progress_tracker(research_dispatches, update, loop, phase_label="查緊資料")
         if results is None:
             return
         for agent_name, reply_text in results:
@@ -3389,9 +3395,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         s_names = "、".join(d["agent"] for d in strategy_dispatches)
         if research_results:
             r_done = "、".join(d["agent"] for d in research_dispatches)
-            await send_long(update, f"👩‍💼 Amy：{r_done} 研究完成！將數據傳俾 {s_names}，制定策略中...")
+            await send_long(update, f"👩‍💼 Amy：{r_done} 搞掂喇～資料交咗俾 {s_names} 諗策略，稍等 💭")
         else:
-            await send_long(update, f"👩‍💼 Amy：【Phase 2】派出 {s_names} 制定策略中...")
+            await send_long(update, f"👩‍💼 Amy：叫咗 {s_names} 幫你諗，緊係 💭")
 
         augmented = []
         for d in strategy_dispatches:
@@ -3435,12 +3441,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── Phase 3：Anna 製作成品（收到所有 Phase 1+2 成果後才出手）────────────
     if file_dispatches:
         if combined_context:
-            await send_long(update, "👩‍💼 Amy：【Phase 3】所有員工完成！整理成果，交俾 🎨 Anna 製作最終成品中...")
+            await send_long(update, "👩‍💼 Amy：人人都搞掂喇！整理好交俾 Anna 去出成品，快好喇 🎨")
         else:
-            await send_long(update, "👩‍💼 Amy：【Phase 3】派出 🎨 Anna 製作成品中...")
+            await send_long(update, "👩‍💼 Amy：Anna 去整緊，等佢一陣 🎨")
 
     if file_dispatches and combined_context:
-        await update.message.reply_text("📋 Amy 整合所有員工成果，為 Anna 準備完整製作簡報...")
+        await update.message.reply_text("📋 我幫你執返靚啲，畀 Anna 做參考...")
         brief_prompt = (
             f"你係 Amy，需要整理一份完整嘅製作簡報俾 Anna。\n\n"
             f"Stanley 嘅原始指令：{user_message}\n\n"
@@ -3478,27 +3484,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         consolidate_user = (
             f"Stanley 嘅原始指令：{user_message}\n\n"
             f"各員工完整成果：\n{all_results[:5000]}\n\n"
-            f"你係 Amy，Stanley 嘅秘書。所有員工已完成工作，請用廣東話出最終行動報告：\n"
-            f"① 今次最重要嘅發現或成果（1-2句）\n"
-            f"② 最優先行動（本週可以即時做嘅3件事，每件要具體）\n"
-            f"③ 下一步建議（如需跟進或製作成品，說明點做）\n"
-            f"格式清晰，唔超過200字。"
+            f"你係 Amy，Stanley 嘅戰友。用廣東話口語整一個簡短總結，唔好講機械人語言：\n"
+            f"① 今次最大發現係咩（1-2句，直接講重點）\n"
+            f"② 本週最優先做嘅3件事（每件具體到可以即刻開始）\n"
+            f"③ 下一步點做（如果要跟進或出成品）\n"
+            f"口語、簡潔、有人味，唔超過200字。"
         )
         summary = await loop.run_in_executor(executor, run_with_system, AGENT_PROMPTS['Amy'], consolidate_user, AGENT_MODELS['Amy'])
         if "[QUOTA_EXCEEDED]" in summary:
             await update.message.reply_text(QUOTA_EXCEEDED_MSG)
             return
-        summary_msg = f"{AGENT_EMOJI['Amy']} Amy 最終報告：\n\n{summary}"
+        summary_msg = f"{AGENT_EMOJI['Amy']} Amy：好，呢度係今次重點 👇\n\n{summary}"
         await send_long(update, summary_msg)
 
         # 任務完成標記
         agents_done = "、".join(all_agents_ran) if all_agents_ran else "員工"
         await update.message.reply_text(
-            f"✅ 任務完成\n"
-            f"指令：{user_message[:60]}{'...' if len(user_message) > 60 else ''}\n"
-            f"完成員工：{agents_done}\n\n"
-            f"如需跟進優化，直接講「修改」或「優化」即可。\n"
-            f"如係全新任務，直接講新指令，唔會撈埋上一個。"
+            f"✅ 搞掂！\n"
+            f"「{user_message[:50]}{'...' if len(user_message) > 50 else ''}」\n"
+            f"出手：{agents_done}\n\n"
+            f"想改？直接講「修改」或「優化」。\n"
+            f"有新嘢做？直接講，唔會混埋上次嘅。"
         )
     else:
         summary_msg = ""
