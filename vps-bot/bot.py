@@ -92,6 +92,7 @@ HISTORY_FILE = "/root/claude-bot/history.json"
 LAST_CONTENT_FILE = "/root/claude-bot/last_content.json"
 USAGE_FILE = "/root/claude-bot/usage.json"
 AGENT_OUTPUTS_FILE = "/root/claude-bot/agent_outputs.json"
+TASK_LOG_FILE = "/root/claude-bot/task_log.md"
 APIFY_TOKEN = os.environ.get("APIFY_API_TOKEN", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GAMMA_API_KEY = os.environ.get("GAMMA_API_KEY", "")
@@ -420,26 +421,34 @@ AMY_DISPATCH_SYSTEM = """你係 Amy，Stanley（Alvis）團隊嘅首席秘書同
 必須輸出純 JSON，唔可以有任何其他文字：
 
 需要問清楚（指令模糊）：
-{"new_task": true, "clarify": "你係想要：\nA) [具體選項A]\nB) [具體選項B]\n係邊個？", "reject": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": null}
+{"new_task": true, "recall": false, "clarify": "你係想要：\nA) [具體選項A]\nB) [具體選項B]\n係邊個？", "reject": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": null}
 
 直接否決（做唔到 / 冇資料）：
-{"new_task": true, "clarify": null, "reject": "❌ [做唔到原因一句]\n\n💡 建議改為：[具體可行做法]\n例如咁講：[正確指令例子]", "amy_message": null, "actions": [], "dispatch": [], "direct_reply": null}
+{"new_task": true, "recall": false, "clarify": null, "reject": "❌ [做唔到原因一句]\n\n💡 建議改為：[具體可行做法]\n例如咁講：[正確指令例子]", "amy_message": null, "actions": [], "dispatch": [], "direct_reply": null}
 
 有 action（全新任務）：
-{"new_task": true, "clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [{"type": "scrape_ig", "param": "帳號名"}], "dispatch": [], "direct_reply": null}
+{"new_task": true, "recall": false, "clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [{"type": "scrape_ig", "param": "帳號名"}], "dispatch": [], "direct_reply": null}
 
 有員工分派（全新任務）：
-{"new_task": true, "clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [], "dispatch": [{"agent": "AgentName", "task": "具體任務描述，包含足夠上下文"}], "direct_reply": null}
+{"new_task": true, "recall": false, "clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [], "dispatch": [{"agent": "AgentName", "task": "具體任務描述，包含足夠上下文"}], "direct_reply": null}
 
 有員工分派（跟進 / 優化 / 修改上一個任務）：
-{"new_task": false, "clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [], "dispatch": [{"agent": "AgentName", "task": "具體任務描述"}], "direct_reply": null}
+{"new_task": false, "recall": false, "clarify": null, "reject": null, "amy_message": "Amy嘅話", "actions": [], "dispatch": [{"agent": "AgentName", "task": "具體任務描述"}], "direct_reply": null}
+
+Stanley 問起過去任務（記唔記得、上次、之前）：
+{"new_task": false, "recall": true, "clarify": null, "reject": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": "Amy根據任務記錄嘅回答"}
 
 Amy直接回答：
-{"new_task": false, "clarify": null, "reject": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": "Amy直接回覆"}
+{"new_task": false, "recall": false, "clarify": null, "reject": null, "amy_message": null, "actions": [], "dispatch": [], "direct_reply": "Amy直接回覆"}
 
 【new_task 判斷規則】
 new_task: true = 全新獨立任務（幫我整X、分析Y、寫Z — 第一次提到某個成品或主題）
 new_task: false = 跟進上一個任務（優化、修改、再整過、加多啲、縮短、翻譯上一份）
+
+【recall 判斷規則】
+recall: true = Stanley 想知道過去做過咩，或者想用過去嘅成果
+觸發詞：上次、之前、記唔記得、上一個、做過、我哋之前、第幾個任務
+recall: false = 全部其他情況
 
 action types: scrape_ig / scrape_threads / scrape_fb / scrape_xhs / scrape_web / scrape_news / product_research"""
 
@@ -575,6 +584,46 @@ def save_last_content_to_disk(data: dict):
             json.dump({str(k): v for k, v in data.items()}, f, ensure_ascii=False)
     except Exception as e:
         logger.error(f"Save last_content error: {e}")
+
+
+def append_task_log(instruction: str, agents: list, output_summary: str) -> None:
+    """每次任務完成後寫入 task_log.md，供日後回憶用。"""
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    agents_str = "、".join(agents) if agents else "Amy 直接回覆"
+    entry = (
+        f"\n## [{timestamp}] {instruction[:80]}\n"
+        f"- 員工：{agents_str}\n"
+        f"- 成果：{output_summary[:500]}\n"
+        f"---\n"
+    )
+    try:
+        with open(TASK_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(entry)
+        # 只保留最近 20 個任務
+        with open(TASK_LOG_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
+        parts = content.split("\n## [")
+        if len(parts) > 21:
+            trimmed = parts[0] + "\n## [" + "\n## [".join(parts[-20:])
+            with open(TASK_LOG_FILE, "w", encoding="utf-8") as f:
+                f.write(trimmed)
+    except Exception as e:
+        logger.warning(f"Task log write error: {e}")
+
+
+def read_task_log(max_entries: int = 8) -> str:
+    """讀取最近幾個任務記錄。"""
+    try:
+        if not os.path.exists(TASK_LOG_FILE):
+            return ""
+        with open(TASK_LOG_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
+        parts = content.split("\n## [")
+        recent = parts[-max_entries:] if len(parts) > max_entries else parts[1:]
+        return "\n## [".join(recent).strip() if recent else ""
+    except Exception:
+        return ""
 
 
 def load_usage() -> dict:
@@ -3094,9 +3143,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         role = "Stanley" if msg["role"] == "user" else "Amy"
         history_text += f"{role}: {msg['content']}\n\n"
 
-    # 先讓 Amy 判斷係新任務定跟進，唔預先注入舊內容
+    # 偵測是否回憶指令，預先讀取 task log 注入
+    _recall_words = ["上次", "之前", "記唔記得", "上一個", "做過", "我哋之前", "第幾個", "之前做"]
+    preload_log = read_task_log() if any(w in user_message for w in _recall_words) else ""
+    task_log_hint = (
+        f"\n\n[Stanley 過去任務記錄（用嚟回答「上次/之前」問題）：\n{preload_log}]\n"
+        if preload_log else ""
+    )
+
     dispatch_user = (
         f"{'對話歷史：' + chr(10) + history_text if history_text else ''}"
+        f"{task_log_hint}"
         f"Stanley 最新指令：{user_message}"
     )
     raw = await loop.run_in_executor(executor, run_with_system, AMY_DISPATCH_SYSTEM, dispatch_user, MODEL_FAST)
@@ -3450,6 +3507,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if all_results:
         last_content[ALLOWED_USER_ID] = all_results[:8000]
         save_last_content_to_disk(last_content)
+        # 寫入任務記錄，供日後回憶
+        append_task_log(
+            instruction=user_message,
+            agents=all_agents_ran,
+            output_summary=summary_msg or all_results[:500]
+        )
 
     full_reply = f"{AGENT_EMOJI['Amy']} Amy：{amy_msg}\n\n{full_results}\n{summary_msg}".strip()
     history.append({"role": "user", "content": user_message})
